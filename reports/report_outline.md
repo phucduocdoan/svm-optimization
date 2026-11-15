@@ -1,5 +1,7 @@
 # Đề cương báo cáo đồ án — Cơ sở toán học và phương pháp tối ưu SVM
 
+Khung báo cáo Word đã được triển khai theo file định dạng `Quyển báo cáo môn cô Xuân (1).docx` tại [`svm_optimization_report.docx`](svm_optimization_report.docx). Số liệu và hình được sinh bởi `python -m experiments.06_report_benchmark`, sau đó đóng gói bằng `python reports/generate_docx.py`.
+
 ## Trang bìa
 Tên trường, học phần Tối ưu hóa, tên đề tài, giảng viên, sinh viên, thời gian.
 

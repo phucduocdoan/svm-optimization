@@ -1,0 +1,22 @@
+{
+  "dataset_summary": "reports/data/dataset_summary.json",
+  "model_metrics": "reports/data/model_metrics.csv",
+  "rbf_grid_search": "reports/data/rbf_grid_search.csv",
+  "figures": {
+    "metrics": "reports\\figures\\benchmark_metrics.png",
+    "confusion_matrices": "reports\\figures\\benchmark_confusion_matrices.png",
+    "grid_search": "reports\\figures\\rbf_grid_search_heatmap.png",
+    "custom_convergence": "reports\\figures\\custom_smo_convergence.png",
+    "decision_boundaries": "reports\\figures\\decision_boundaries_2d.png",
+    "roc": "reports\\figures\\benchmark_roc.png"
+  },
+  "best_rbf_params": {
+    "svc__C": 10.0,
+    "svc__gamma": 0.1
+  },
+  "custom_smo": {
+    "iterations": 66917,
+    "pair_updates": 1057,
+    "converged": true
+  }
+}

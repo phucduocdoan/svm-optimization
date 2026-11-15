@@ -29,6 +29,11 @@ Mã Mermaid có thể chỉnh sửa tại [`diagrams/experiment_pipeline.mmd`](d
 | `03_custom_smo.py` | Tự cài SMO trên Banknote | `python -m experiments.03_custom_smo` |
 | `04_compare_C_kernel.py` | Khảo sát Linear/RBF và C | `python -m experiments.04_compare_C_kernel` |
 | `05_visualize_2d.py` | Vẽ boundary 2D trên hai feature đầu | `python -m experiments.05_visualize_2d` |
+| `06_report_benchmark.py` | Benchmark theo cấu trúc báo cáo: CV, baseline, custom SMO và figures | `python -m experiments.06_report_benchmark` |
+
+`06_report_benchmark.py` là entry point chính cho báo cáo Word. Script ghi số liệu vào
+`reports/data/` và các hình vào `reports/figures/`: bảng metrics, confusion matrices,
+heatmap C–gamma, ROC, boundary 2D và lịch sử objective của SMO.
 
 ## 4. Metrics cần trình bày
 
@@ -78,7 +83,10 @@ Giữ split cố định, chuẩn hóa dữ liệu, thử kernel Linear và RBF.
 - Sau khi chốt cấu hình, đánh giá test một lần.
 - Nếu có thời gian, báo cáo mean ± standard deviation của cross-validation.
 
-Script `04_compare_C_kernel.py` hiện là script khảo sát nhạy cảm đơn giản trên cùng test set. Không dùng bảng này để tuyên bố cấu hình tốt nhất tổng quát; báo cáo chính thức nên bổ sung GridSearchCV hoặc cross-validation.
+Script `04_compare_C_kernel.py` là script khảo sát nhạy cảm nhanh trên cùng test set.
+Benchmark chính thức dùng `06_report_benchmark.py`: GridSearchCV 5-fold chỉ trên train,
+chốt C/gamma rồi mới đánh giá test một lần. Vì vậy bảng benchmark phù hợp để đưa vào
+báo cáo hơn bảng khảo sát nhanh.
 
 ## 7. Phần tối ưu hóa cần được báo cáo
 

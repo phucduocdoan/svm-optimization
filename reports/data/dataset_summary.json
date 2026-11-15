@@ -1,0 +1,19 @@
+{
+  "n_samples": 1372,
+  "n_features": 4,
+  "feature_names": [
+    "variance",
+    "skewness",
+    "curtosis",
+    "entropy"
+  ],
+  "class_counts": {
+    "-1": 762,
+    "1": 610
+  },
+  "train_samples": 1097,
+  "test_samples": 275,
+  "test_size": 0.2,
+  "random_state": 42,
+  "positive_class": 1
+}

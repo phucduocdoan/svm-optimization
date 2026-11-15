@@ -126,6 +126,17 @@ Xem phép tính từng bước trong [hướng dẫn kernel](docs/06_kernel.md#v
 uv run pytest -q
 ```
 
+### Tạo lại báo cáo Word
+
+Bản nền của nhóm nằm tại `reports/report_base.docx`. Chương trình giữ nội dung các chương trong bản nền, chèn hình và kết quả thực nghiệm vào các mục tương ứng, rồi xuất `reports/svm_optimization_report.docx`. File nền không bị thay đổi.
+
+```bash
+uv run python -m experiments.06_report_benchmark
+uv run python reports/generate_docx.py
+```
+
+Mở báo cáo trong Word, chọn mục lục và nhấn F9 để cập nhật số trang. Để dùng bản nền khác có cùng các tiêu đề, đặt biến môi trường `REPORT_TEMPLATE` thành đường dẫn của file đó.
+
 ## 6. Dataset: Banknote Authentication
 
 - Nguồn: [UCI Machine Learning Repository — Banknote Authentication](https://archive.ics.uci.edu/dataset/267/banknote+authentication).

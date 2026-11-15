@@ -23,3 +23,18 @@ def test_reference_page_layout_and_cover_are_repeatable():
     report.add_cover(document)
     assert len(document._element.xpath('.//w:bookmarkStart[@w:name="svm_report_cover"]')) == 1
     assert len(document.sections) == 2
+
+
+def test_insert_before_preserves_existing_content_and_order():
+    document = Document()
+    document.add_paragraph("Nội dung của nhóm")
+    anchor = document.add_paragraph("Kết luận chương")
+
+    def append_new():
+        document.add_paragraph("Hình bổ sung")
+        document.add_paragraph("Giải thích bổ sung")
+
+    report.insert_before(document, anchor, append_new)
+    assert [p.text for p in document.paragraphs] == [
+        "Nội dung của nhóm", "Hình bổ sung", "Giải thích bổ sung", "Kết luận chương"
+    ]

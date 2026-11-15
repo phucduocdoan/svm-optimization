@@ -9,7 +9,7 @@ Các nguyên tắc của benchmark:
 
 Chạy từ thư mục gốc:
 
-    python -m experiments.06_report_benchmark
+    uv run python -m experiments.06_report_benchmark
 """
 
 from __future__ import annotations
@@ -54,6 +54,28 @@ def _savefig(fig: plt.Figure, name: str) -> str:
     fig.savefig(path, dpi=180, bbox_inches="tight")
     plt.close(fig)
     return str(path.relative_to(ROOT))
+
+
+def plot_grid_heatmap(heat: pd.DataFrame) -> plt.Figure:
+    """Vẽ F1 với màu chữ tương phản theo màu nền của từng ô."""
+    fig, ax = plt.subplots(figsize=(7, 5))
+    values = heat.to_numpy(dtype=float)
+    im = ax.imshow(values, cmap="YlGnBu", vmin=values.min(), vmax=values.max())
+    ax.set_xticks(range(len(heat.columns)), [str(x) for x in heat.columns])
+    ax.set_yticks(range(len(heat.index)), [str(x) for x in heat.index])
+    ax.set_xlabel("C")
+    ax.set_ylabel("gamma")
+    ax.set_title("5-fold CV: F1 của RBF SVC")
+    for i in range(heat.shape[0]):
+        for j in range(heat.shape[1]):
+            rgb = np.asarray(im.cmap(im.norm(values[i, j]))[:3])
+            linear = np.where(rgb <= 0.04045, rgb / 12.92, ((rgb + 0.055) / 1.055) ** 2.4)
+            luminance = float(np.dot(linear, [0.2126, 0.7152, 0.0722]))
+            color = "black" if luminance > 0.179 else "white"
+            ax.text(j, i, f"{values[i, j]:.3f}", ha="center", va="center", fontsize=10, color=color)
+    fig.colorbar(im, ax=ax, label="mean F1")
+    fig.tight_layout()
+    return fig
 
 
 def _evaluate(name, model, X_train, y_train, X_test, y_test, support_vectors=None):
@@ -219,19 +241,7 @@ def main() -> None:
     confusion_figure = _savefig(fig, "benchmark_confusion_matrices.png")
 
     heat = cv_results.pivot(index="param_svc__gamma", columns="param_svc__C", values="mean_test_score")
-    fig, ax = plt.subplots(figsize=(7, 5))
-    im = ax.imshow(heat.to_numpy(), cmap="YlGnBu", vmin=heat.to_numpy().min(), vmax=heat.to_numpy().max())
-    ax.set_xticks(range(len(heat.columns)), [str(x) for x in heat.columns])
-    ax.set_yticks(range(len(heat.index)), [str(x) for x in heat.index])
-    ax.set_xlabel("C")
-    ax.set_ylabel("gamma")
-    ax.set_title("5-fold CV: F1 của RBF SVC")
-    for i in range(heat.shape[0]):
-        for j in range(heat.shape[1]):
-            ax.text(j, i, f"{heat.iloc[i, j]:.3f}", ha="center", va="center", fontsize=8)
-    fig.colorbar(im, ax=ax, label="mean F1")
-    fig.tight_layout()
-    grid_figure = _savefig(fig, "rbf_grid_search_heatmap.png")
+    grid_figure = _savefig(plot_grid_heatmap(heat), "rbf_grid_search_heatmap.png")
 
     fig, ax = plt.subplots(figsize=(8, 4.5))
     ax.plot(custom.optimizer_.objective_history_, color="#7757C7", marker=".", markersize=2)

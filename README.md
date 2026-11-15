@@ -4,7 +4,7 @@
 
 Project được thiết kế cho người mới học tối ưu hóa: mỗi chủ đề có tài liệu riêng, ví dụ số nhỏ, module Python tương ứng và bài kiểm tra. Không cần đọc hết code ngay từ đầu.
 
-> **Hiển thị công thức:** các file Markdown dùng inline `$...$` và block `$$...$$`; công thức chính có `\tag{...}` để đánh số. GitHub hỗ trợ trực tiếp bằng MathJax; xem [chỉ mục công thức](docs/11_formula_index.md) để tra số và [GitHub: Writing mathematical expressions](https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/writing-mathematical-expressions).
+> **Hiển thị công thức:** các file Markdown dùng inline `$...$` và block `$$...$$`; công thức chính có số đặt bên dưới. GitHub hỗ trợ trực tiếp cú pháp toán; xem [chỉ mục công thức](docs/11_formula_index.md) để tra số và [GitHub: Writing mathematical expressions](https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/writing-mathematical-expressions).
 
 ## 1. Kết quả học tập kỳ vọng
 
@@ -127,6 +127,14 @@ python -m experiments.04_compare_C_kernel
 ```
 
 Mặc định bước D dùng `sklearn.svm.SVC` để chạy nhanh. Mở file và đặt `USE_CUSTOM = True` để khảo sát phiên bản SMO tự cài. Bản SMO ở đây hướng tới học thuật và minh họa, không nhắm đến tốc độ của LIBSVM.
+
+**Ví dụ kernel trick — tính Gram matrix và score dự đoán:**
+
+```bash
+python -m experiments.07_kernel_trick
+```
+
+Xem phép tính từng bước trong [hướng dẫn kernel](docs/06_kernel.md#ví-dụ-số-từ-kernel-đến-dự-đoán).
 
 **Bước E — chạy tests:**
 

@@ -57,3 +57,19 @@ def test_rbf_scores_match_sklearn_on_held_out_points():
     points = np.array([[.1, .1], [.1, .9], [.8, .2], [.8, .8]])
     assert np.array_equal(custom.predict(points), reference.predict(points))
     assert np.allclose(custom.decision_function(points), reference.decision_function(points), atol=1e-4)
+
+
+def test_two_point_kernel_example_matches_manual_score():
+    from svm_optimization.models.kernel import linear_kernel
+
+    samples = np.array([[-1.0], [1.0]])
+    labels = np.array([-1, 1])
+    x_new = np.array([[0.5]])
+    model = KernelSVM(C=1, kernel='rbf', gamma=0.5, tol=1e-6).fit(samples, labels)
+
+    assert np.allclose(linear_kernel(samples, samples), [[1, -1], [-1, 1]])
+    assert np.allclose(rbf_kernel(samples, samples, 0.5), [[1, np.exp(-2)], [np.exp(-2), 1]])
+    similarities = np.array([np.exp(-1.125), np.exp(-0.125)])
+    assert np.allclose(model.alpha_, [1, 1])
+    assert np.isclose(model.intercept_, 0, atol=1e-6)
+    assert np.isclose(model.decision_function(x_new)[0], -similarities[0] + similarities[1])

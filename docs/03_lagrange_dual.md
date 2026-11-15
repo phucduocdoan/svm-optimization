@@ -9,13 +9,15 @@ $$
 \min_{w,b,\xi}\quad &\frac12\|w\|^2+C\sum_i\xi_i\\
 \text{s.t.}\quad &1-y_i(w^Tx_i+b)-\xi_i\leq0,\\
 &-\xi_i\leq0.
-\end{aligned} \tag{3.1}
+\end{aligned}
 $$
+
+(3.1)
 
 Ta đưa mỗi ràng buộc bất đẳng thức vào Lagrangian bằng một biến nhân tử không âm:
 
-- `alpha_i >= 0` cho ràng buộc margin.
-- `mu_i >= 0` cho ràng buộc `xi_i >= 0`.
+- $\alpha_i \geq 0$ cho ràng buộc margin.
+- $\mu_i \geq 0$ cho ràng buộc $\xi_i \geq 0$.
 
 ## 2. Lagrangian
 
@@ -25,8 +27,10 @@ L(w,b,\xi,\alpha,\mu)
 =&\frac12\|w\|^2+C\sum_i\xi_i\\
 &-\sum_i\alpha_i[y_i(w^Tx_i+b)-1+\xi_i]\\
 &-\sum_i\mu_i\xi_i.
-\end{aligned} \tag{3.2}
+\end{aligned}
 $$
+
+(3.2)
 
 Bạn có thể đọc từng dòng:
 
@@ -45,8 +49,10 @@ $$
 Suy ra:
 
 $$
-\boxed{w=\sum_i\alpha_i y_i x_i} \tag{3.3}
+\boxed{w=\sum_i\alpha_i y_i x_i}
 $$
+
+(3.3)
 
 Ý nghĩa: vector pháp tuyến tối ưu là tổ hợp có trọng số của các mẫu dữ liệu. Mẫu có alpha bằng 0 không đóng góp vào w.
 
@@ -59,8 +65,10 @@ $$
 Suy ra:
 
 $$
-\boxed{\sum_i\alpha_i y_i=0} \tag{3.4}
+\boxed{\sum_i\alpha_i y_i=0}
 $$
+
+(3.4)
 
 Đây là ràng buộc đẳng thức của bài toán Dual.
 
@@ -70,17 +78,19 @@ $$
 \frac{\partial L}{\partial\xi_i}=C-\alpha_i-\mu_i=0
 $$
 
-Vì `mu_i>=0` và `alpha_i>=0`:
+Vì $\mu_i \geq 0$ và $\alpha_i \geq 0$:
 
 $$
-\mu_i=C-\alpha_i\quad\Longrightarrow\quad 0\leq\alpha_i\leq C \tag{3.5}
+\mu_i=C-\alpha_i\quad\Longrightarrow\quad 0\leq\alpha_i\leq C
 $$
+
+(3.5)
 
 Đây là nguồn gốc của cận trên C trong bài toán đối ngẫu, không phải một điều kiện được đặt tùy ý.
 
 ## 4. Thay trở lại Lagrangian
 
-Sau khi loại `w,b,xi,mu`, ta nhận được:
+Sau khi loại $w,b,\xi,\mu$, ta nhận được:
 
 $$
 \boxed{
@@ -88,8 +98,10 @@ $$
 \max_{\alpha}\quad &\sum_i\alpha_i-\frac12\sum_i\sum_j\alpha_i\alpha_jy_iy_j(x_i^Tx_j)\\
 \text{s.t.}\quad &\sum_i\alpha_i y_i=0,\\
 &0\leq\alpha_i\leq C.
-\end{aligned}} \tag{3.6}
+\end{aligned}}
 $$
+
+(3.6)
 
 Đây là bài toán đối ngẫu bậc hai. Ta tối đa hóa một hàm lõm theo alpha (tương đương tối thiểu hóa hàm lồi sau khi đổi dấu), với các ràng buộc tuyến tính.
 
@@ -97,7 +109,7 @@ $$
 
 | Primal | Dual |
 |---|---|
-| Biến chính `w,b,xi` | Biến chính `alpha` |
+| Biến chính $w,b,\xi$ | Biến chính $\alpha$ |
 | Tối thiểu hóa | Tối đa hóa |
 | Ràng buộc trên margin và slack | Tổng alpha*y bằng 0; alpha nằm trong [0,C] |
 | Dễ diễn giải hình học | Là nền tảng cho Support Vectors và Kernel Trick |
@@ -122,11 +134,11 @@ File `src/svm_optimization/math/dual.py`:
 - `dual_gradient(...)`: tính gradient theo alpha.
 - `check_dual_feasibility(...)`: kiểm tra cận alpha và ràng buộc equality.
 
-`K` là Gram matrix, với `K[i,j] = x_i^T x_j` ở Linear Kernel. Khi dùng kernel, phép tích vô hướng được thay bằng `K(x_i,x_j)`.
+`K` là Gram matrix, với $K_{ij}=x_i^T x_j$ ở Linear Kernel. Khi dùng kernel, phép tích vô hướng được thay bằng $K(x_i,x_j)$.
 
 ## 8. Bạn cần tự trả lời
 
-1. `alpha_i` xuất hiện từ ràng buộc nào?
-2. Vì sao `alpha_i<=C`?
-3. Ràng buộc `sum(alpha_i*y_i)=0` xuất hiện từ đạo hàm theo biến nào?
+1. $\alpha_i$ xuất hiện từ ràng buộc nào?
+2. Vì sao $\alpha_i \leq C$?
+3. Ràng buộc $\sum_i\alpha_i y_i=0$ xuất hiện từ đạo hàm theo biến nào?
 4. Vì sao Dual thuận tiện để đưa Kernel vào?

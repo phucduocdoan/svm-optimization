@@ -30,7 +30,7 @@ Nguồn: [`diagrams/architecture.mmd`](diagrams/architecture.mmd).
 - `decision_score(X,w,b)`: nhân ma trận `X @ w` rồi cộng bias.
 - `predict_linear`: lấy dấu score.
 - `vector_norm`: gọi chuẩn Euclid.
-- `margin_width`: tính `2 / ||w||`.
+- `margin_width`: tính $2/\|w\|$.
 - `point_to_hyperplane_distance`: tính khoảng cách có dấu tuyệt đối.
 
 Đây là module nên đọc đầu tiên vì không có vòng lặp tối ưu phức tạp.
@@ -95,7 +95,7 @@ Luồng `fit(X,y)`:
 3. Tạo Gram matrix train-train.
 4. Gọi `SMOOptimizer.fit(K,y)`.
 5. Lưu alpha, support vectors và bias.
-6. Với Linear Kernel, tính `w = sum(alpha_i*y_i*x_i)`.
+6. Với Linear Kernel, tính $w=\sum_i\alpha_i y_i x_i$.
 
 Luồng `decision_function(X)`:
 
@@ -114,8 +114,8 @@ Luồng `predict(X)` chỉ lấy dấu của decision score.
 | Khởi tạo alpha/b/errors | Vì sao ban đầu error bằng `-y`? |
 | `violates_kkt` | Điều kiện nào khiến mẫu cần update? |
 | Tính L/H | Cận nào giữ alpha nằm trong [0,C]? |
-| `eta` và `aj_new` | Đây là tối ưu một chiều theo alpha_j như thế nào? |
-| `ai_new` | Làm sao giữ `sum(alpha*y)=0`? |
+| $\eta$ và `aj_new` | Đây là tối ưu một chiều theo alpha_j như thế nào? |
+| `ai_new` | Làm sao giữ $\sum_i\alpha_i y_i=0$? |
 | `b1`, `b2` | Vì sao hai điểm cập nhật có thể đưa ra hai bias? |
 | `errors += ...` | Vì sao có thể cập nhật cache thay vì tính lại mọi score? |
 | Điều kiện dừng | Thuật toán dừng do không còn update hay do đạt max_iter? |

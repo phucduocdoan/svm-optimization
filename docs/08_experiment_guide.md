@@ -44,6 +44,7 @@ Nguồn: [`diagrams/experiment_pipeline.mmd`](diagrams/experiment_pipeline.mmd).
 | `03_custom_smo.py` | Tự cài SMO trên Banknote | `python -m experiments.03_custom_smo` |
 | `04_compare_C_kernel.py` | Khảo sát Linear/RBF và C | `python -m experiments.04_compare_C_kernel` |
 | `05_visualize_2d.py` | Vẽ boundary 2D trên hai feature đầu | `python -m experiments.05_visualize_2d` |
+| `07_kernel_trick.py` | Ví dụ số về Gram matrix và score dự đoán | `python -m experiments.07_kernel_trick` |
 
 ## 4. Metrics cần trình bày
 
@@ -100,7 +101,7 @@ Script `04_compare_C_kernel.py` hiện là script khảo sát nhạy cảm đơn
 Đây là môn Tối ưu hóa, do đó nên có các kết quả sau ngoài metrics phân loại:
 
 1. Primal objective trên ví dụ giải tay.
-2. Dual objective và kiểm tra ràng buộc `sum(alpha*y)=0`, `0<=alpha<=C`.
+2. Dual objective và kiểm tra ràng buộc $\sum_i\alpha_i y_i=0$, $0\le\alpha\le C$.
 3. Duality gap trên ví dụ nhỏ.
 4. Số support vectors.
 5. Diễn biến dual objective qua các pass của SMO.
@@ -121,8 +122,8 @@ Script `04_compare_C_kernel.py` hiện là script khảo sát nhạy cảm đơn
 
 - Chỉ trình bày Accuracy mà không có mô hình toán.
 - Gọi tất cả điểm gần đường phân chia là support vector mà không xem alpha/KKT.
-- Nhầm `C` với gamma.
+- Nhầm $C$ với gamma.
 - Tính scaler trên toàn dataset trước khi chia train/test.
 - Gọi SMO là Gradient Descent thông thường.
-- Khẳng định mọi điểm `alpha=C` đều bị phân loại sai.
+- Khẳng định mọi điểm $\alpha=C$ đều bị phân loại sai.
 - Dùng test set để chọn siêu tham số rồi vẫn xem đó là đánh giá khách quan.

@@ -63,13 +63,13 @@ $$
 
 ## 4. Tìm alpha và kiểm tra Dual
 
-Chỉ hai điểm đầu active nên đặt `alpha_3=alpha_4=0`. Ràng buộc equality:
+Chỉ hai điểm đầu active nên đặt $\alpha_3=\alpha_4=0$. Ràng buộc equality:
 
 $$
 -\alpha_1+\alpha_2=0\Rightarrow\alpha_1=\alpha_2.
 $$
 
-Từ `w=sum(alpha_i*y_i*x_i)`:
+Từ $w=\sum_i\alpha_i y_i x_i$:
 
 $$
 \begin{aligned}
@@ -78,7 +78,7 @@ w&=\alpha_1(-1)(-1,-1)+\alpha_2(+1)(1,1)\\
 \end{aligned}
 $$
 
-Vì `w=(0.5,0.5)`, ta được `alpha_1=alpha_2=0.25`.
+Vì `w=(0.5,0.5)`, ta được $\alpha_1=\alpha_2=0.25$.
 
 Alpha cuối cùng:
 
@@ -97,9 +97,9 @@ Vậy `P=D=0.25`, duality gap bằng 0 trong nghiệm giải tích này.
 ## 5. Kiểm tra KKT
 
 - Primal feasibility: tất cả margin >= 1, slack = 0.
-- Dual feasibility: alpha nằm trong [0,1] và `sum(alpha*y)=0`.
-- Stationarity: `w=sum(alpha*y*x)`; tổng alpha*y bằng 0.
-- Complementarity: hai alpha dương tương ứng hai điểm có margin đúng 1; hai điểm margin 1.5 có alpha bằng 0. Tất cả `xi=0` nên `mu*xi=0`.
+- Dual feasibility: alpha nằm trong [0,1] và $\sum_i\alpha_i y_i=0$.
+- Stationarity: $w=\sum_i\alpha_i y_i x_i$; tổng alpha*y bằng 0.
+- Complementarity: hai alpha dương tương ứng hai điểm có margin đúng 1; hai điểm margin 1.5 có alpha bằng 0. Tất cả $\xi=0$ nên `mu*xi=0`.
 
 ## 6. Chạy code đối chiếu
 

@@ -2,7 +2,7 @@
 
 ## 1. Bài toán phân loại nhị phân
 
-Ta có dữ liệu huấn luyện `D = {(x_i, y_i)}`. Mỗi `x_i` là vector gồm `d` đặc trưng, còn nhãn `y_i` chỉ nhận `-1` hoặc `+1`.
+Ta có dữ liệu huấn luyện $D=\{(x_i,y_i)\}$. Mỗi $x_i$ là vector gồm $d$ đặc trưng, còn nhãn $y_i$ chỉ nhận `-1` hoặc `+1`.
 
 Ví dụ `x = [variance, skewness, curtosis, entropy]` là một mẫu tiền giấy có bốn đặc trưng. SVM học một quy tắc để dự đoán mẫu thuộc lớp nào.
 
@@ -11,12 +11,14 @@ Ví dụ `x = [variance, skewness, curtosis, entropy]` là một mẫu tiền gi
 Một siêu phẳng được viết:
 
 $$
-f(x)=w^T x+b=0 \tag{1.1}
+f(x)=w^T x+b=0
 $$
 
-- `w` là vector pháp tuyến, chỉ hướng vuông góc với siêu phẳng.
-- `b` dịch chuyển siêu phẳng.
-- `f(x)` là điểm số có dấu; chưa phải xác suất.
+(1.1)
+
+- $w$ là vector pháp tuyến, chỉ hướng vuông góc với siêu phẳng.
+- $b$ dịch chuyển siêu phẳng.
+- $f(x)$ là điểm số có dấu; chưa phải xác suất.
 - Dự đoán `sign(f(x))`.
 
 Trong 2D, siêu phẳng là đường thẳng. Nếu `w=[2,1]`, `b=-3`, đường phân chia là `2*x1 + x2 - 3 = 0`.
@@ -27,17 +29,19 @@ Trong 2D, siêu phẳng là đường thẳng. Nếu `w=[2,1]`, `b=-3`, đườn
 
 ## 3. Khoảng cách từ điểm đến siêu phẳng
 
-Với một điểm `x`, khoảng cách hình học là:
+Với một điểm $x$, khoảng cách hình học là:
 
 $$
-d(x,H)=\frac{|w^T x+b|}{\|w\|_2} \tag{1.2}
+d(x,H)=\frac{|w^T x+b|}{\|w\|_2}
 $$
 
-Tại sao phải chia cho `||w||`? Nếu nhân cả `w` và `b` với 10 thì phương trình siêu phẳng không đổi. Chia cho độ dài vector pháp tuyến làm khoảng cách không phụ thuộc cách scale phương trình.
+(1.2)
+
+Tại sao phải chia cho $\|w\|$? Nếu nhân cả $w$ và $b$ với 10 thì phương trình siêu phẳng không đổi. Chia cho độ dài vector pháp tuyến làm khoảng cách không phụ thuộc cách scale phương trình.
 
 ## 4. Chuẩn hóa margin
 
-Ta có thể nhân `w,b` với một hằng số dương mà không làm đổi ranh giới phân lớp. SVM chọn một cách chuẩn hóa thuận tiện sao cho hai biên gần nhất thỏa:
+Ta có thể nhân $w,b$ với một hằng số dương mà không làm đổi ranh giới phân lớp. SVM chọn một cách chuẩn hóa thuận tiện sao cho hai biên gần nhất thỏa:
 
 $$
 w^T x+b=+1,\qquad w^T x+b=-1.
@@ -46,25 +50,31 @@ $$
 Khoảng cách giữa hai mặt biên là:
 
 $$
-\text{margin}=\frac{2}{\|w\|_2} \tag{1.3}
+\text{margin}=\frac{2}{\|w\|_2}
 $$
 
-Vì vậy, tối đa hóa margin tương đương tối thiểu hóa `||w||`. Ta dùng bình phương và hệ số 1/2 vì đạo hàm gọn hơn:
+(1.3)
+
+Vì vậy, tối đa hóa margin tương đương tối thiểu hóa $\|w\|$. Ta dùng bình phương và hệ số 1/2 vì đạo hàm gọn hơn:
 
 $$
-\min_{w,b}\frac12\|w\|_2^2 \tag{1.4}
+\min_{w,b}\frac12\|w\|_2^2
 $$
+
+(1.4)
 
 ## 5. Ràng buộc phân loại
 
 Một cách viết gọn cho cả hai lớp:
 
 $$
-y_i(w^T x_i+b)\geq 1 \tag{1.5}
+y_i(w^T x_i+b)\geq 1
 $$
 
-- Nếu `y_i=+1`, yêu cầu `f(x_i)>=1`.
-- Nếu `y_i=-1`, yêu cầu `f(x_i)<=-1`.
+(1.5)
+
+- Nếu $y_i=+1$, yêu cầu $f(x_i)\geq1$.
+- Nếu $y_i=-1$, yêu cầu $f(x_i)\leq-1$.
 
 Như vậy mỗi điểm nằm ở đúng phía và không lọt vào vùng margin.
 
@@ -81,10 +91,10 @@ Khi vẽ hình 2D, ta thường thấy hai đường margin song song và một 
 
 File `src/svm_optimization/math/geometry.py`:
 
-- `decision_score`: tính `w^T x+b`.
+- `decision_score`: tính $w^T x+b$.
 - `predict_linear`: lấy dấu để dự đoán `-1/+1`.
-- `vector_norm`: tính `||w||`.
-- `margin_width`: tính `2/||w||`.
+- `vector_norm`: tính $\|w\|$.
+- `margin_width`: tính $2/\|w\|$.
 - `point_to_hyperplane_distance`: tính khoảng cách một điểm.
 
 Chạy kiểm tra nhanh:
@@ -101,6 +111,6 @@ print(margin_width(w))            # 2.828427...
 
 ## 8. Bạn cần tự trả lời
 
-1. Nếu thay `w,b` bằng `10w,10b`, ranh giới có thay đổi không? Margin tính bằng công thức có thay đổi không?
-2. Vì sao điểm `f(x)=0` nằm đúng trên hyperplane?
+1. Nếu thay $w,b$ bằng `10w,10b`, ranh giới có thay đổi không? Margin tính bằng công thức có thay đổi không?
+2. Vì sao điểm $f(x)=0$ nằm đúng trên hyperplane?
 3. Với `w=[3,4]`, margin width bằng bao nhiêu?

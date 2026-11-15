@@ -1,21 +1,22 @@
-# 10 — Nguồn hình minh họa và giấy phép
+# 10 — Nguồn dữ liệu và cách tạo hình
 
-## Hình lấy từ web
+Các hình khoa học trong `docs/images/scientific/` được vẽ bằng Matplotlib từ dữ liệu tổng hợp hoặc công thức, không phải kết quả Banknote. Tạo lại PNG và SVG từ thư mục gốc của project:
 
-Các Markdown dùng URL ảnh trực tiếp từ Wikimedia Commons để GitHub render ổn định; Mermaid diagram được viết inline trong từng tài liệu.
+```bash
+python docs/images/scientific/generate.py
+```
 
-| File | Nội dung | Ghi chú |
-|---|---|---|
-| `https://upload.wikimedia.org/wikipedia/commons/f/fd/SVM_margins.png` | Hình học SVM | Hyperplane, margin và support vectors; public domain |
-| `https://thumb.wikimedia.org/wikipedia/commons/thumb/c/cc/Kernel_trick_idea.svg/1280px-Kernel_trick_idea.svg.png` | Kernel Trick | Ánh xạ lên không gian đặc trưng; Shiyu Ji, CC BY-SA 4.0 |
-| `https://commons.wikimedia.org/wiki/Special:FilePath/Supporting_Vector_Machine.png?width=1200` | Support vectors | Siêu phẳng và các điểm hỗ trợ; Pkuwangyan06, CC BY-SA 4.0 |
-| `https://commons.wikimedia.org/wiki/Special:FilePath/Comparison_of_Loss_functions_for_binary_classification.png?width=1200` | Hàm loss | So sánh loss cho phân loại nhị phân; xem giấy phép tại trang file |
-| `https://commons.wikimedia.org/wiki/Special:FilePath/Gradient_descent.png?width=1000` | Tối ưu hóa | Trực giác gradient descent; Oleg Alexandrov, public domain |
-| `https://commons.wikimedia.org/wiki/Special:FilePath/Machine_Learning_Pipeline_in_Production.png?width=1200` | Pipeline ML | Pipeline dữ liệu và mô hình; Dinohund, CC BY-SA 4.0 |
-| `https://commons.wikimedia.org/wiki/Special:FilePath/ConfusionMatrix.png?width=1000` | Confusion matrix | TP, FP, FN, TN; Jackverr, CC BY-SA 3.0 |
-| `https://commons.wikimedia.org/wiki/Special:FilePath/Example_ROC_curves.png?width=1000` | ROC | Ví dụ đường ROC; Gforman44, CC BY-SA 3.0 |
+Bốn sơ đồ trong `docs/diagrams/` có nguồn Mermaid `.mmd`; Markdown chứa cùng nội dung để GitHub render trực tiếp. Để tạo lại PNG dùng cho báo cáo Word, cài Playwright và Chromium, sau đó chạy:
 
-Các ảnh minh họa khái niệm không được trình bày như kết quả thực nghiệm trên Banknote. Kết quả thực nghiệm chỉ lấy từ các script trong `experiments/`.
+```bash
+python -m pip install playwright
+python -m playwright install chromium
+python docs/diagrams/render.py
+```
+
+Bước này cần mạng để tải thư viện Mermaid. Có thể đặt `CHROMIUM_EXECUTABLE_PATH` để dùng Chromium đã cài. Khi sửa sơ đồ, cập nhật cả nguồn `.mmd` và khối Mermaid tương ứng trong Markdown, sau đó tạo lại PNG và báo cáo Word.
+
+Các biểu đồ kết quả trong `reports/figures/` được sinh từ thí nghiệm của project. Không dùng chúng làm kết quả cho một cấu hình khác.
 
 ## Dataset
 

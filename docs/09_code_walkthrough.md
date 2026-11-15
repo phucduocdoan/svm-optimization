@@ -4,37 +4,22 @@ Tài liệu này là bản đồ từ lý thuyết sang từng file Python. Đ�
 
 ## 1. Sơ đồ luồng gọi hàm
 
-![Pipeline machine learning tham khảo](https://commons.wikimedia.org/wiki/Special:FilePath/Machine_Learning_Pipeline_in_Production.png?width=1200)
-
-Hình web này giúp định vị các lớp dữ liệu, tiền xử lý, modeling và đánh giá; sơ đồ gọi hàm cụ thể của repository vẫn là Mermaid ngay dưới đây. Nguồn: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Machine_Learning_Pipeline_in_Production.png), CC BY-SA 4.0.
-
 ```mermaid
 flowchart LR
-  subgraph ENTRY[Experiment layer]
-    EXP[experiments]
-    DATA[data.py]
-  end
-  subgraph MODEL[Model layer]
-    SVM[KernelSVM]
-    KERNEL[kernel.py]
-  end
-  subgraph OPT[Optimization layer]
-    SMO[SMOOptimizer]
-  end
-  subgraph MATH[Math toolbox]
-    GEOM[geometry]
-    PRIMAL[primal]
-    DUAL[dual]
-    KKT[kkt]
-  end
-  EXP --> DATA --> SVM
-  SVM --> KERNEL
-  SVM --> SMO
-  SVM -.-> GEOM
-  SVM -.-> PRIMAL
-  SVM -.-> DUAL
-  SVM -.-> KKT
+  E["experiments/<br/>chạy thí nghiệm"] --> DATA["data.py<br/>tải và mã hóa dữ liệu"]
+  E --> MODEL["models/svm.py<br/>KernelSVM"]
+  MODEL --> K["models/kernel.py<br/>Linear · RBF"]
+  MODEL --> SMO["optimization/smo.py<br/>SMOOptimizer"]
+  SMO --> DUAL["math/dual.py<br/>hàm mục tiêu đối ngẫu"]
+  E --> EVAL["evaluation.py<br/>metrics phân loại"]
+  E --> VIZ["visualization.py<br/>hàm vẽ kết quả"]
+  E -. "phân tích Primal" .-> PRIMAL["math/primal.py"]
+  classDef standard fill:#f4f6f8,stroke:#84929d,color:#1e2933,stroke-width:1.3px
+  classDef focus fill:#e7efef,stroke:#6e8a87,color:#1e2933,stroke-width:1.4px
+  class E,DATA,MODEL,K,SMO,DUAL,EVAL,VIZ,PRIMAL standard
 ```
+
+Nguồn: [`diagrams/architecture.mmd`](diagrams/architecture.mmd).
 
 ## 2. Nhóm toán học: `src/svm_optimization/math/`
 
@@ -87,6 +72,17 @@ Hãy phân biệt `K` là ma trận kernel giữa mọi cặp mẫu, không ph�
 
 - Linear: `X @ Y.T`.
 - RBF: khoảng cách bình phương từng cặp, rồi `exp(-gamma*distance²)`.
+
+Ví dụ kernel trick trên hai tập mẫu `X` và `Z`:
+
+```python
+from svm_optimization.models.kernel import linear_kernel, rbf_kernel
+
+K_linear = linear_kernel(X, Z)
+K_rbf = rbf_kernel(X, Z, gamma=0.5)
+```
+
+Mỗi phần tử `K[i, j]` so sánh mẫu thứ `i` của `X` với mẫu thứ `j` của `Z`. Linear trả tích vô hướng; RBF trả `exp(-gamma * ||X[i] - Z[j]||²)`. Ví dụ giả định `X` và `Z` đã được chuẩn bị và có cùng số cột.
 
 ### `svm.py`
 
@@ -152,16 +148,30 @@ Không dùng plot 2D như bằng chứng thay thế kết quả trên đủ bố
 - `04_compare_C_kernel.py`: khảo sát nhạy cảm theo C/kernel.
 - `05_visualize_2d.py`: mô hình riêng trên hai feature đầu để vẽ ranh giới trực quan.
 
-## 8. Thứ tự đọc code được khuyên dùng
+## 8. Một vòng SMO
 
 ```mermaid
 flowchart LR
-  A[Chọn i,j vi phạm KKT] --> B[Tính L,H và eta]
-  B --> C[Cập nhật alpha_j]
-  C --> D[Cập nhật alpha_i để giữ sum alpha*y = 0]
-  D --> E[Cập nhật bias b]
-  E --> F[Cập nhật error cache]
+  subgraph CHON["1 · Chọn cặp"]
+    direction TB
+    A["Duyệt i vi phạm KKT<br/>chọn ứng viên j"] --> B["Tính L, H và η<br/>xét cặp hợp lệ"]
+  end
+  subgraph CAPNHAT["2 · Cập nhật"]
+    direction TB
+    C["Cập nhật αⱼ và αᵢ<br/>giữ Σ αᵢyᵢ = 0"] --> D["Cập nhật b<br/>và bộ nhớ sai số"]
+  end
+  subgraph DUNG["3 · Lặp và dừng"]
+    direction TB
+    E["Lặp và kiểm tra<br/>điều kiện dừng"] --> F["Dừng: max_passes lượt<br/>không đổi hoặc max_iter"]
+  end
+  CHON --> CAPNHAT --> DUNG
+  classDef standard fill:#f4f6f8,stroke:#84929d,color:#1e2933,stroke-width:1.3px
+  classDef focus fill:#e7efef,stroke:#6e8a87,color:#1e2933,stroke-width:1.4px
+  class A,B,C,D,E standard
+  class F focus
 ```
+
+Nguồn: [`diagrams/smo_pair_update.mmd`](diagrams/smo_pair_update.mmd).
 
 ## 9. Bài tập code nhỏ
 

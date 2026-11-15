@@ -12,9 +12,9 @@ $$
 
 Ta không cần tính tường minh vector `phi(x)` có thể nằm trong không gian rất nhiều chiều; chỉ cần tính kernel giữa hai điểm.
 
-![Minh họa Kernel Trick](https://thumb.wikimedia.org/wikipedia/commons/thumb/c/cc/Kernel_trick_idea.svg/1280px-Kernel_trick_idea.svg.png)
+![Ranh giới Linear và RBF trên dữ liệu XOR tổng hợp](images/scientific/linear_rbf_xor.svg)
 
-Hình minh họa ánh xạ dữ liệu sang không gian đặc trưng để tìm ranh giới tuyến tính. Nguồn: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Kernel_trick_idea.svg), Shiyu Ji, CC BY-SA 4.0.
+*Hình 4: Hai mô hình SVC học cùng dữ liệu XOR tổng hợp. Đây là ví dụ trực quan trên tập huấn luyện, không phải benchmark Banknote.*
 
 ## 2. Linear Kernel
 

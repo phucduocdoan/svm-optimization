@@ -1,4 +1,18 @@
 flowchart LR
-  A["Chọn αᵢ, αⱼ"] --> B["Tính bounds L, H"] --> C["Tối ưu αⱼ trên [L,H]"] --> D["Suy ra αᵢ để giữ equality"] --> E["Cập nhật bias + error cache"] --> F{"KKT còn vi phạm?"}
-  F -->|Có| A
-  F -->|Không| G["Dừng khi thỏa tiêu chí hội tụ"]
+  subgraph CHON["1 · Chọn cặp"]
+    direction TB
+    A["Duyệt i vi phạm KKT<br/>chọn ứng viên j"] --> B["Tính L, H và η<br/>xét cặp hợp lệ"]
+  end
+  subgraph CAPNHAT["2 · Cập nhật"]
+    direction TB
+    C["Cập nhật αⱼ và αᵢ<br/>giữ Σ αᵢyᵢ = 0"] --> D["Cập nhật b<br/>và bộ nhớ sai số"]
+  end
+  subgraph DUNG["3 · Lặp và dừng"]
+    direction TB
+    E["Lặp và kiểm tra<br/>điều kiện dừng"] --> F["Dừng: max_passes lượt<br/>không đổi hoặc max_iter"]
+  end
+  CHON --> CAPNHAT --> DUNG
+  classDef standard fill:#f4f6f8,stroke:#84929d,color:#1e2933,stroke-width:1.3px
+  classDef focus fill:#e7efef,stroke:#6e8a87,color:#1e2933,stroke-width:1.4px
+  class A,B,C,D,E standard
+  class F focus

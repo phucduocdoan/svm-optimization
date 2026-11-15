@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 import numpy as np
+from scipy.spatial.distance import cdist
 
 
 def linear_kernel(X: np.ndarray, Y: np.ndarray) -> np.ndarray:
@@ -11,12 +12,10 @@ def linear_kernel(X: np.ndarray, Y: np.ndarray) -> np.ndarray:
 
 def rbf_kernel(X: np.ndarray, Y: np.ndarray, gamma: float) -> np.ndarray:
     """K(x,z)=exp(-gamma*||x-z||^2)."""
-    if gamma <= 0:
-        raise ValueError("gamma phải dương.")
+    if not np.isfinite(gamma) or gamma <= 0:
+        raise ValueError("gamma phải hữu hạn và dương.")
     X, Y = np.asarray(X, float), np.asarray(Y, float)
-    x2 = np.sum(X*X, axis=1)[:, None]
-    y2 = np.sum(Y*Y, axis=1)[None, :]
-    d2 = np.maximum(x2 + y2 - 2.0*(X @ Y.T), 0.0)
+    d2 = cdist(X, Y, metric="sqeuclidean")
     return np.exp(-gamma*d2)
 
 

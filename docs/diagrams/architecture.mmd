@@ -1,0 +1,12 @@
+flowchart LR
+  E["experiments/<br/>chạy thí nghiệm"] --> DATA["data.py<br/>tải và mã hóa dữ liệu"]
+  E --> MODEL["models/svm.py<br/>KernelSVM"]
+  MODEL --> K["models/kernel.py<br/>Linear · RBF"]
+  MODEL --> SMO["optimization/smo.py<br/>SMOOptimizer"]
+  SMO --> DUAL["math/dual.py<br/>hàm mục tiêu đối ngẫu"]
+  E --> EVAL["evaluation.py<br/>metrics phân loại"]
+  E --> VIZ["visualization.py<br/>hàm vẽ kết quả"]
+  E -. "phân tích Primal" .-> PRIMAL["math/primal.py"]
+  classDef standard fill:#f4f6f8,stroke:#84929d,color:#1e2933,stroke-width:1.3px
+  classDef focus fill:#e7efef,stroke:#6e8a87,color:#1e2933,stroke-width:1.4px
+  class E,DATA,MODEL,K,SMO,DUAL,EVAL,VIZ,PRIMAL standard

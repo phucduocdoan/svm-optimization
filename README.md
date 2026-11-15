@@ -4,38 +4,6 @@
 
 Project được thiết kế cho người mới học tối ưu hóa: mỗi chủ đề có tài liệu riêng, ví dụ số nhỏ, module Python tương ứng và bài kiểm tra. Không cần đọc hết code ngay từ đầu.
 
-## Hình minh họa nhanh
-
-**SVM: hyperplane, margin và support vectors**
-
-![SVM margins](https://upload.wikimedia.org/wikipedia/commons/f/fd/SVM_margins.png)
-
-Nguồn: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:SVM_margins.svg), public domain.
-
-**Kernel Trick: ánh xạ sang không gian đặc trưng**
-
-![Kernel trick](https://thumb.wikimedia.org/wikipedia/commons/thumb/c/cc/Kernel_trick_idea.svg/1280px-Kernel_trick_idea.svg.png)
-
-Nguồn: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Kernel_trick_idea.svg), Shiyu Ji, CC BY-SA 4.0.
-
-**Soft Margin: vùng biên và điểm vi phạm**
-
-![Soft-margin SVM](https://upload.wikimedia.org/wikipedia/commons/f/fd/SVM_margins.png)
-
-Hình minh họa lấy từ Wikimedia Commons; không phải kết quả huấn luyện Banknote.
-
-**Tối ưu hóa, pipeline và đánh giá mô hình**
-
-![Gradient descent](https://commons.wikimedia.org/wiki/Special:FilePath/Gradient_descent.png?width=1000)
-
-![Machine learning pipeline](https://commons.wikimedia.org/wiki/Special:FilePath/Machine_Learning_Pipeline_in_Production.png?width=1200)
-
-![Confusion matrix](https://commons.wikimedia.org/wiki/Special:FilePath/ConfusionMatrix.png?width=1000)
-
-![ROC curves](https://commons.wikimedia.org/wiki/Special:FilePath/Example_ROC_curves.png?width=1000)
-
-Các hình trên là minh họa khái niệm từ [Wikimedia Commons](docs/10_image_credits.md); biểu đồ kết quả thật nằm trong `reports/figures/` và được sinh lại bằng benchmark.
-
 > **Hiển thị công thức:** các file Markdown dùng inline `$...$` và block `$$...$$`; công thức chính có `\tag{...}` để đánh số. GitHub hỗ trợ trực tiếp bằng MathJax; xem [chỉ mục công thức](docs/11_formula_index.md) để tra số và [GitHub: Writing mathematical expressions](https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/writing-mathematical-expressions).
 
 ## 1. Kết quả học tập kỳ vọng
@@ -54,14 +22,13 @@ Sau khi hoàn thành, bạn nên có thể:
 
 ```mermaid
 flowchart LR
-    A[Hình học] --> B[Soft-margin Primal]
-    B --> C[Lagrangian]
-    C --> D[Dual]
-    D --> E[KKT]
-    E --> F[SMO]
-    F --> G[KernelSVM]
-    G --> H[Banknote benchmark]
-    H --> I[Phân tích và báo cáo]
+  A["Hình học → Primal<br/>Margin · slack · C"] --> C["Lagrangian → Dual<br/>Điều kiện stationarity"]
+  C --> D["KKT → SMO<br/>Tối ưu từng cặp α"]
+  D --> F["KernelSVM → Banknote<br/>Thực nghiệm · báo cáo"]
+  classDef standard fill:#f4f6f8,stroke:#84929d,color:#1e2933,stroke-width:1.3px
+  classDef focus fill:#e7efef,stroke:#6e8a87,color:#1e2933,stroke-width:1.4px
+  class A,C,F standard
+  class D focus
 ```
 
 | Chặng | Tài liệu | Code nên đọc/chạy | Đầu ra cần đạt |
@@ -82,51 +49,20 @@ flowchart LR
 
 ```mermaid
 flowchart LR
-    DATA[UCI Banknote] --> PREP[Split + StandardScaler]
-    PREP --> BASE[sklearn SVC baseline]
-    PREP --> MODEL[KernelSVM tự cài]
-    KERNEL[Linear / RBF Kernel] --> OPT[SMOOptimizer]
-    OPT --> MODEL
-    MODEL --> EVAL[Metrics]
-    MODEL --> VIZ[Visualization]
-    BASE --> CMP[So sánh]
-    EVAL --> CMP
-    VIZ --> REPORT[Báo cáo]
-    CMP --> REPORT
+  E["experiments/<br/>chạy thí nghiệm"] --> DATA["data.py<br/>tải và mã hóa dữ liệu"]
+  E --> MODEL["models/svm.py<br/>KernelSVM"]
+  MODEL --> K["models/kernel.py<br/>Linear · RBF"]
+  MODEL --> SMO["optimization/smo.py<br/>SMOOptimizer"]
+  SMO --> DUAL["math/dual.py<br/>hàm mục tiêu đối ngẫu"]
+  E --> EVAL["evaluation.py<br/>metrics phân loại"]
+  E --> VIZ["visualization.py<br/>hàm vẽ kết quả"]
+  E -. "phân tích Primal" .-> PRIMAL["math/primal.py"]
+  classDef standard fill:#f4f6f8,stroke:#84929d,color:#1e2933,stroke-width:1.3px
+  classDef focus fill:#e7efef,stroke:#6e8a87,color:#1e2933,stroke-width:1.4px
+  class E,DATA,MODEL,K,SMO,DUAL,EVAL,VIZ,PRIMAL standard
 ```
 
-```mermaid
-classDiagram
-    class KernelSVM {
-      +fit(X, y)
-      +decision_function(X)
-      +predict(X)
-      +get_support_vectors()
-    }
-    class SMOOptimizer {
-      +fit(K, y)
-      +alpha_
-      +b_
-      +objective_value_
-    }
-    class KernelFunctions {
-      +linear_kernel(X, Y)
-      +rbf_kernel(X, Y, gamma)
-    }
-    class MathModules {
-      +geometry
-      +primal
-      +dual
-      +kkt
-    }
-    class Evaluator {
-      +evaluate_binary(y_true, y_pred)
-    }
-    KernelSVM --> SMOOptimizer
-    KernelSVM --> KernelFunctions
-    KernelSVM ..> MathModules
-    KernelSVM --> Evaluator
-```
+Nguồn sơ đồ có thể chỉnh sửa: [`docs/diagrams/architecture.mmd`](docs/diagrams/architecture.mmd).
 
 ## 4. Cài đặt môi trường
 

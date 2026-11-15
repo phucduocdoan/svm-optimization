@@ -6,21 +6,16 @@
 
 ```mermaid
 flowchart LR
-    A[Hình học] --> B[Soft-margin Primal]
-    B --> C[Lagrangian]
-    C --> D[Dual]
-    D --> E[KKT]
-    E --> F[SMO]
-    F --> G[KernelSVM]
-    G --> H[Banknote benchmark]
-    H --> I[Phân tích và báo cáo]
+  A["Hình học → Primal<br/>Margin · slack · C"] --> C["Lagrangian → Dual<br/>Điều kiện stationarity"]
+  C --> D["KKT → SMO<br/>Tối ưu từng cặp α"]
+  D --> F["KernelSVM → Banknote<br/>Thực nghiệm · báo cáo"]
+  classDef standard fill:#f4f6f8,stroke:#84929d,color:#1e2933,stroke-width:1.3px
+  classDef focus fill:#e7efef,stroke:#6e8a87,color:#1e2933,stroke-width:1.4px
+  class A,C,F standard
+  class D focus
 ```
 
 Bản sơ đồ Mermaid có thể chỉnh sửa tại [`diagrams/overview.mmd`](diagrams/overview.mmd).
-
-![Pipeline học máy tổng quát](https://commons.wikimedia.org/wiki/Special:FilePath/Machine_Learning_Pipeline_in_Production.png?width=1200)
-
-Hình pipeline chỉ dùng để hình dung mối liên hệ giữa dữ liệu, tiền xử lý, mô hình và đánh giá; pipeline Banknote cụ thể được mô tả bằng Mermaid ở phần dưới. Nguồn: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Machine_Learning_Pipeline_in_Production.png), CC BY-SA 4.0.
 
 ## Thứ tự học 20/80
 

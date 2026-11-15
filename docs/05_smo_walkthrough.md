@@ -16,13 +16,32 @@ $$
 
 Nếu tối ưu từng `alpha_i` độc lập, ta có thể làm hỏng ràng buộc đẳng thức. SMO xử lý bằng cách cập nhật **hai alpha cùng lúc** để vẫn giữ:
 
-![Trực giác đi xuống trên hàm mục tiêu](https://commons.wikimedia.org/wiki/Special:FilePath/Gradient_descent.png?width=1000)
-
-Đây là hình minh họa trực giác tối ưu hóa nói chung. SMO không đi theo một gradient descent đơn giản; nó tối ưu một bài toán con hai biến và giữ ràng buộc `sum(alpha*y)=0`. Nguồn: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Gradient_descent.png), public domain.
-
 $$
 y_i\Delta\alpha_i+y_j\Delta\alpha_j=0 \tag{5.3}
 $$
+
+```mermaid
+flowchart LR
+  subgraph CHON["1 · Chọn cặp"]
+    direction TB
+    A["Duyệt i vi phạm KKT<br/>chọn ứng viên j"] --> B["Tính L, H và η<br/>xét cặp hợp lệ"]
+  end
+  subgraph CAPNHAT["2 · Cập nhật"]
+    direction TB
+    C["Cập nhật αⱼ và αᵢ<br/>giữ Σ αᵢyᵢ = 0"] --> D["Cập nhật b<br/>và bộ nhớ sai số"]
+  end
+  subgraph DUNG["3 · Lặp và dừng"]
+    direction TB
+    E["Lặp và kiểm tra<br/>điều kiện dừng"] --> F["Dừng: max_passes lượt<br/>không đổi hoặc max_iter"]
+  end
+  CHON --> CAPNHAT --> DUNG
+  classDef standard fill:#f4f6f8,stroke:#84929d,color:#1e2933,stroke-width:1.3px
+  classDef focus fill:#e7efef,stroke:#6e8a87,color:#1e2933,stroke-width:1.4px
+  class A,B,C,D,E standard
+  class F focus
+```
+
+Nguồn: [`diagrams/smo_pair_update.mmd`](diagrams/smo_pair_update.mmd).
 
 ## 2. Các ký hiệu cần hiểu
 

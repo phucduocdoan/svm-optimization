@@ -2,10 +2,6 @@
 
 Đây là phần toán trọng tâm của đồ án. Hãy hiểu ý nghĩa trước, sau đó tự viết lại từng phép đạo hàm.
 
-![Gradient descent trên đường đồng mức](https://commons.wikimedia.org/wiki/Special:FilePath/Gradient_descent.png?width=1000)
-
-Hình minh họa trực giác chung về đi xuống theo hướng giảm của một hàm mục tiêu; Dual của SVM được giải bằng SMO chứ không phải gradient descent thông thường. Nguồn: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Gradient_descent.png), public domain.
-
 ## 1. Nhắc lại Primal
 
 $$

@@ -2,10 +2,6 @@
 
 KKT là bộ điều kiện liên hệ nghiệm tối ưu với ràng buộc. Với bài toán lồi và điều kiện chính quy phù hợp, KKT là điều kiện cần và đủ để một nghiệm khả thi là nghiệm tối ưu.
 
-![Support vectors và siêu phẳng phân tách](https://commons.wikimedia.org/wiki/Special:FilePath/Supporting_Vector_Machine.png?width=1200)
-
-Hình chỉ minh họa vai trò hình học của các điểm sát biên; việc xác định support vector trong project được kiểm tra thêm bằng alpha và residual KKT. Nguồn: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Supporting_Vector_Machine.png), CC BY-SA 4.0.
-
 ## 1. Bốn nhóm điều kiện
 
 ### A. Primal feasibility — nghiệm Primal khả thi

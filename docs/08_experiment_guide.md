@@ -8,28 +8,32 @@ Dữ liệu có 1.372 mẫu, bốn đặc trưng số và hai lớp. Các đặc
 
 Project dùng `ucimlrepo` để tải lần đầu, sau đó cache CSV trong `data/banknote/`.
 
-## Hình trực quan về soft-margin SVM
-
-![SVM với hyperplane và margin](https://upload.wikimedia.org/wikipedia/commons/f/fd/SVM_margins.png)
-
-Hình trên lấy từ Wikimedia Commons để minh họa margin; không đại diện cho kết quả huấn luyện Banknote. Kết quả Banknote thật được sinh ra bởi script `05_visualize_2d.py`.
-
-![Machine learning pipeline](https://commons.wikimedia.org/wiki/Special:FilePath/Machine_Learning_Pipeline_in_Production.png?width=1200)
-
-Pipeline trên là hình tham khảo tổng quát; pipeline thực nghiệm của project được khóa bằng Mermaid ở phần 2 và có scaler chỉ fit trên train. Nguồn: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Machine_Learning_Pipeline_in_Production.png), CC BY-SA 4.0.
-
 ## 2. Pipeline chuẩn
 
 ```mermaid
 flowchart LR
-  DATA[UCI Banknote] --> SPLIT[Train/test stratified]
-  SPLIT --> SCALE[Fit scaler trên train]
-  SCALE --> BASE[SVC baseline]
-  SCALE --> CUSTOM[Custom SMO]
-  BASE --> METRICS[Metrics và confusion matrix]
-  CUSTOM --> METRICS
-  METRICS --> REPORT[Báo cáo]
+  subgraph SPLIT["1 · Chia dữ liệu"]
+    direction TB
+    A["Banknote<br/>4 đặc trưng · 2 lớp"] --> B["Chia train / test<br/>có phân tầng"]
+  end
+  subgraph TRAIN["2 · Huấn luyện trên train"]
+    direction TB
+    C["Linear SVC · Custom SMO<br/>Scaler fit trên train"]
+    D["RBF: chọn C và γ<br/>5-fold CV · scaler fit<br/>trên train của từng fold<br/>Fit lại trên toàn train"]
+    C ~~~ D
+  end
+  subgraph TEST["3 · Đánh giá"]
+    direction TB
+    F["Test giữ riêng<br/>Scaler chỉ transform test<br/>Tính metrics"]
+  end
+  SPLIT --> TRAIN --> TEST
+  classDef standard fill:#f4f6f8,stroke:#84929d,color:#1e2933,stroke-width:1.3px
+  classDef focus fill:#e7efef,stroke:#6e8a87,color:#1e2933,stroke-width:1.4px
+  class A,B,C,D standard
+  class F focus
 ```
+
+Nguồn: [`diagrams/experiment_pipeline.mmd`](diagrams/experiment_pipeline.mmd).
 
 ## 3. Các script
 
@@ -42,12 +46,6 @@ flowchart LR
 | `05_visualize_2d.py` | Vẽ boundary 2D trên hai feature đầu | `python -m experiments.05_visualize_2d` |
 
 ## 4. Metrics cần trình bày
-
-![Confusion matrix](https://commons.wikimedia.org/wiki/Special:FilePath/ConfusionMatrix.png?width=1000)
-
-![ROC curves](https://commons.wikimedia.org/wiki/Special:FilePath/Example_ROC_curves.png?width=1000)
-
-Hai hình trên là sơ đồ đọc metrics, không phải ma trận/ROC của split Banknote. Các biểu đồ benchmark thật nằm trong `reports/figures/`.
 
 - **Accuracy:** tỷ lệ dự đoán đúng tổng thể.
 - **Precision (+1):** trong các mẫu dự đoán +1, có bao nhiêu mẫu thật sự +1.

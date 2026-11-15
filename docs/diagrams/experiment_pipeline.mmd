@@ -1,8 +1,20 @@
 flowchart LR
-  A["UCI Banknote"] --> B["Validate + encode labels"] --> C["Stratified split"] --> D["Fit scaler on train only"]
-  D --> E["Transform train / test"]
-  E --> F["sklearn SVC baseline"]
-  E --> G["Custom KernelSVM + SMO"]
-  F --> H["Same held-out test set"]
-  G --> H
-  H --> I["Metrics + support vectors"] --> J["Optimization analysis"] --> K["Report"]
+  subgraph SPLIT["1 · Chia dữ liệu"]
+    direction TB
+    A["Banknote<br/>4 đặc trưng · 2 lớp"] --> B["Chia train / test<br/>có phân tầng"]
+  end
+  subgraph TRAIN["2 · Huấn luyện trên train"]
+    direction TB
+    C["Linear SVC · Custom SMO<br/>Scaler fit trên train"]
+    D["RBF: chọn C và γ<br/>5-fold CV · scaler fit<br/>trên train của từng fold<br/>Fit lại trên toàn train"]
+    C ~~~ D
+  end
+  subgraph TEST["3 · Đánh giá"]
+    direction TB
+    F["Test giữ riêng<br/>Scaler chỉ transform test<br/>Tính metrics"]
+  end
+  SPLIT --> TRAIN --> TEST
+  classDef standard fill:#f4f6f8,stroke:#84929d,color:#1e2933,stroke-width:1.3px
+  classDef focus fill:#e7efef,stroke:#6e8a87,color:#1e2933,stroke-width:1.4px
+  class A,B,C,D standard
+  class F focus

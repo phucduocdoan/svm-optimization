@@ -21,15 +21,9 @@ $$
 
 Trong 2D, siêu phẳng là đường thẳng. Nếu `w=[2,1]`, `b=-3`, đường phân chia là `2*x1 + x2 - 3 = 0`.
 
-## Hình minh họa: Hyperplane, margin và support vectors
+![Hai lớp dữ liệu, ranh giới, hai biên và điểm hỗ trợ](images/scientific/svm_geometry.svg)
 
-![SVM nhị phân: hyperplane, margin và support vectors](https://upload.wikimedia.org/wikipedia/commons/f/fd/SVM_margins.png)
-
-Hình lấy từ [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:SVM_margins.png), public domain. Đây là minh họa ý tưởng, không phải kết quả huấn luyện Banknote.
-
-![SVM và ánh xạ sang không gian phân tách](https://commons.wikimedia.org/wiki/Special:FilePath/Supporting_Vector_Machine.png?width=1200)
-
-Hình bổ sung cho thấy trực giác support vectors và siêu phẳng trong không gian phân tách. Nguồn: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Supporting_Vector_Machine.png), Pkuwangyan06, CC BY-SA 4.0.
+*Hình 1: Ví dụ 2D tổng hợp, không phải kết quả Banknote. Các điểm khoanh tròn nằm trên biên.*
 
 ## 3. Khoảng cách từ điểm đến siêu phẳng
 

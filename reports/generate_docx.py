@@ -43,6 +43,44 @@ def clear_body(document: Document) -> None:
             body.remove(child)
 
 
+def trim_after_template_front_matter(document: Document) -> None:
+    """Giữ nguyên front matter và section break của template gốc.
+
+    Template đặt section break ở paragraph ngay trước chương đầu tiên. Chỉ
+    xóa phần nội dung mẫu sau section break, thay vì dựng lại document từ đầu.
+    """
+    chapter = next(
+        paragraph for paragraph in document.paragraphs
+        if paragraph.text.strip() == "TỔNG QUAN VỀ HỌC MÁY VÀ BÀI TOÁN PHÂN LỚP"
+    )
+    body = document._element.body
+    remove = False
+    for child in list(body):
+        if child is chapter._p:
+            remove = True
+        if remove and child.tag != qn("w:sectPr"):
+            body.remove(child)
+
+
+def update_template_front_matter(document: Document) -> None:
+    """Đổi chữ mẫu ở các trang đầu nhưng giữ style/layout của template."""
+    paragraphs = document.paragraphs
+    replacements = {
+        1: "Tôi cam đoan báo cáo này sử dụng mã nguồn, số liệu và kết quả thực nghiệm được ghi rõ trong project SVM Optimization Lab. Các hình lấy từ Internet đều có nguồn và giấy phép kèm theo.",
+        5: "Tôi trân trọng cảm ơn giảng viên học phần đã cung cấp khung trình bày và định hướng để gắn lý thuyết tối ưu với một bài toán học máy có thể kiểm chứng.",
+        10: "Hình 1.1. Lộ trình nghiên cứu SVM bằng Mermaid",
+        14: "Bảng 1.1. Cấu hình benchmark và giao thức đánh giá",
+        15: "Bảng 1.2. Metrics của các mô hình trên tập test",
+        20: "SVM — Support Vector Machine",
+        21: "QP — Quadratic Programming",
+        22: "KKT — Karush–Kuhn–Tucker",
+        23: "SMO — Sequential Minimal Optimization",
+    }
+    for index, text in replacements.items():
+        if index < len(paragraphs):
+            paragraphs[index].text = text
+
+
 def set_cell_text(cell, text: str, bold: bool = False) -> None:
     cell.text = ""
     p = cell.paragraphs[0]
@@ -155,74 +193,11 @@ def main() -> None:
     artifacts = json.loads((ROOT / "reports" / "benchmark_artifacts.json").read_text(encoding="utf-8"))
 
     document = Document(str(TEMPLATE))
-    clear_body(document)
-    configure_styles(document)
+    trim_after_template_front_matter(document)
+    update_template_front_matter(document)
     document.core_properties.title = "Nghiên cứu SVM dưới góc nhìn tối ưu hóa"
     document.core_properties.subject = "Primal, Dual, KKT, SMO và benchmark Banknote Authentication"
     document.core_properties.author = "Nhóm thực hiện"
-
-    # Trang bìa theo cấu trúc của template.
-    for _ in range(3):
-        document.add_paragraph()
-    p = document.add_paragraph(style="CoverB")
-    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    p.add_run("ĐỒ ÁN MÔN TỐI ƯU HÓA").bold = True
-    p = document.add_paragraph(style="CoverB")
-    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    p.add_run("NGHIÊN CỨU SVM DƯỚI GÓC NHÌN TỐI ƯU HÓA").bold = True
-    p = document.add_paragraph()
-    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    p.add_run("Primal – Lagrangian – Dual – KKT – SMO và kiểm chứng trên Banknote Authentication").italic = True
-    for _ in range(5):
-        document.add_paragraph()
-    for line in ["Sinh viên: [Điền họ tên]", "Mã sinh viên: [Điền mã số]", "Giảng viên: [Điền tên giảng viên]", f"Năm học: {date.today().year}"]:
-        p = document.add_paragraph(style="Content")
-        p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        p.add_run(line)
-    document.add_page_break()
-
-    document.add_heading("LỜI CAM ĐOAN", level=1)
-    document.add_paragraph("Tôi cam đoan báo cáo này được xây dựng từ mã nguồn và kết quả thực nghiệm của project SVM Optimization Lab. Các số liệu trong báo cáo được sinh lại bằng script benchmark có cấu hình và random state công khai; các hình minh họa bên ngoài được ghi rõ nguồn và giấy phép.")
-    document.add_heading("LỜI CẢM ƠN", level=1)
-    document.add_paragraph("Tôi trân trọng cảm ơn giảng viên học phần đã cung cấp khung trình bày và định hướng đánh giá một bài toán tối ưu hóa gắn với machine learning. Báo cáo sử dụng cấu trúc của tài liệu mẫu được cung cấp, đồng thời thay toàn bộ nội dung minh họa bằng bài toán SVM của project.")
-    document.add_page_break()
-
-    document.add_heading("MỤC LỤC", level=1)
-    add_toc(document)
-    document.add_page_break()
-    document.add_heading("DANH MỤC CÁC HÌNH ẢNH", level=1)
-    for item in [
-        "Hình 1.1. Lộ trình nghiên cứu SVM theo bốn phase.",
-        "Hình 2.1. Hyperplane, margin và support vectors.",
-        "Hình 3.1. Minh họa Kernel Trick.",
-        "Hình 5.1. So sánh các metrics trên tập test.",
-        "Hình 5.2. Ma trận nhầm lẫn.",
-        "Hình 5.3. Heatmap chọn C và gamma bằng 5-fold CV.",
-        "Hình 5.4. Hội tụ của SMO Custom Linear.",
-        "Hình 5.5. Decision boundary trên hai đặc trưng đầu.",
-        "Hình 5.6. ROC trên tập test.",
-    ]:
-        document.add_paragraph(item, style="Content")
-    document.add_page_break()
-    document.add_heading("DANH MỤC BẢNG BIỂU", level=1)
-    for item in [
-        "Bảng 4.1. Cấu hình thực nghiệm.",
-        "Bảng 5.1. Tóm tắt dữ liệu và cách chia tập.",
-        "Bảng 5.2. Metrics của các mô hình.",
-        "Bảng 5.3. Cấu hình RBF tốt nhất.",
-    ]:
-        document.add_paragraph(item, style="Content")
-    document.add_page_break()
-    document.add_heading("DANH MỤC CÁC TỪ VIẾT TẮT", level=1)
-    add_table(document, ["Viết tắt", "Ý nghĩa"], [
-        ("SVM", "Support Vector Machine"),
-        ("QP", "Quadratic Programming"),
-        ("KKT", "Karush–Kuhn–Tucker"),
-        ("SMO", "Sequential Minimal Optimization"),
-        ("CV", "Cross-validation"),
-        ("RBF", "Radial Basis Function"),
-    ], widths=[1.2, 4.8])
-    document.add_page_break()
 
     document.add_heading("CHƯƠNG 1. TỔNG QUAN VỀ HỌC MÁY VÀ BÀI TOÁN PHÂN LỚP", level=1)
     document.add_heading("1.1. Học máy có giám sát và phân lớp", level=2)
@@ -231,7 +206,7 @@ def main() -> None:
     document.add_paragraph("SVM phù hợp với học phần Tối ưu hóa vì nghiệm được xác định thông qua một bài toán cực tiểu lồi: tối thiểu hóa độ lớn của vector pháp tuyến đồng thời đáp ứng các ràng buộc phân lớp. Margin không chỉ là trực giác hình học mà còn là đại lượng nối trực tiếp giữa độ phức tạp mô hình và khả năng tổng quát hóa.")
     document.add_heading("1.3. Phạm vi và lộ trình", level=2)
     document.add_paragraph("Báo cáo đi từ hình học, Primal, Lagrangian, Dual và KKT đến SMO; sau đó triển khai KernelSVM nhị phân và đối chiếu với các mô hình chuẩn trên UCI Banknote Authentication.")
-    add_figure(document, ROOT / "docs/images/roadmap_horizontal.png", "Hình 1.1. Lộ trình nghiên cứu SVM theo bốn phase.", width=6.2)
+    document.add_paragraph("Lộ trình Mermaid chi tiết được giữ trong README và docs/00_roadmap.md để GitHub render trực tiếp, không nhúng lại thành ảnh custom vào báo cáo Word.")
 
     document.add_heading("CHƯƠNG 2. CƠ SỞ LÝ THUYẾT VÀ HÌNH HỌC CỦA SVM", level=1)
     document.add_heading("2.1. Siêu phẳng, khoảng cách và margin", level=2)

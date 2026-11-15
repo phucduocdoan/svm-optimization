@@ -4,9 +4,19 @@
 
 Đây không phải đồ án chỉ dùng SVM để đạt Accuracy cao. Câu hỏi trung tâm của môn **Tối ưu hóa** là: ta tối ưu đại lượng nào, dưới các ràng buộc nào, vì sao có thể chuyển từ Primal sang Dual, và thuật toán tìm nghiệm ra sao?
 
-![Lộ trình SVM Optimization gồm bốn chặng theo chiều ngang](images/roadmap_horizontal.png)
+```mermaid
+flowchart LR
+    A[Hình học] --> B[Soft-margin Primal]
+    B --> C[Lagrangian]
+    C --> D[Dual]
+    D --> E[KKT]
+    E --> F[SMO]
+    F --> G[KernelSVM]
+    G --> H[Banknote benchmark]
+    H --> I[Phân tích và báo cáo]
+```
 
-Bản sơ đồ có thể chỉnh sửa bằng Mermaid tại [`diagrams/overview.mmd`](diagrams/overview.mmd); ảnh PNG được render từ source Mermaid và lưu trực tiếp trong repository để GitHub tải ổn định.
+Bản sơ đồ Mermaid có thể chỉnh sửa tại [`diagrams/overview.mmd`](diagrams/overview.mmd).
 
 ## Thứ tự học 20/80
 

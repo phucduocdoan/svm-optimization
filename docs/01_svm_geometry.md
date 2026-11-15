@@ -23,9 +23,9 @@ Trong 2D, siêu phẳng là đường thẳng. Nếu `w=[2,1]`, `b=-3`, đườn
 
 ## Hình minh họa: Hyperplane, margin và support vectors
 
-![SVM nhị phân: hyperplane, margin song song và support vectors được khoanh tròn](images/svm_geometry.svg)
+![SVM nhị phân: hyperplane, margin và support vectors](https://upload.wikimedia.org/wikipedia/commons/f/fd/SVM_margins.png)
 
-Đây là hình dựng riêng cho project bằng dữ liệu minh họa 2D. Đường liền là decision boundary; hai đường nét đứt là margin; các điểm được khoanh là những điểm nằm gần biên. Đây là minh họa ý tưởng, không phải kết quả huấn luyện Banknote.
+Hình lấy từ [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:SVM_margins.png), public domain. Đây là minh họa ý tưởng, không phải kết quả huấn luyện Banknote.
 
 ## 3. Khoảng cách từ điểm đến siêu phẳng
 

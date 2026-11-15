@@ -14,9 +14,9 @@ $$
 
 ## Hình minh họa: Soft Margin và slack
 
-![Ví dụ soft-margin SVM với các điểm nằm trong margin và điểm vi phạm margin](images/soft_margin_toy.svg)
+![SVM với hyperplane và margin](https://upload.wikimedia.org/wikipedia/commons/f/fd/SVM_margins.png)
 
-Đây là hình minh họa do project tự tạo bằng dữ liệu tổng hợp 2D, **không phải kết quả trên Banknote**. Vòng tròn rỗng thể hiện support vectors; dấu nhân thể hiện mẫu có vi phạm margin. Một số mẫu có thể vẫn được phân loại đúng nhưng nằm bên trong margin.
+Hình minh họa lấy từ [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:SVM_margins.png), public domain; dùng để minh họa margin trước khi đi vào slack variable, không phải kết quả trên Banknote.
 
 ## 2. Hàm mục tiêu
 

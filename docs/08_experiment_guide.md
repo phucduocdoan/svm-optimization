@@ -10,15 +10,22 @@ Project dùng `ucimlrepo` để tải lần đầu, sau đó cache CSV trong `da
 
 ## Hình trực quan về soft-margin SVM
 
-![Sơ đồ soft-margin SVM 2D với hyperplane, margin, support vectors và điểm vi phạm](images/soft_margin_toy.svg)
+![SVM với hyperplane và margin](https://upload.wikimedia.org/wikipedia/commons/f/fd/SVM_margins.png)
 
-Hình trên là dữ liệu tổng hợp 2D để minh họa hình học soft-margin; nó không đại diện cho kết quả huấn luyện Banknote. Kết quả Banknote thật sẽ được sinh ra bởi script `05_visualize_2d.py` sau khi tải dataset và chạy thực nghiệm.
+Hình trên lấy từ Wikimedia Commons để minh họa margin; không đại diện cho kết quả huấn luyện Banknote. Kết quả Banknote thật được sinh ra bởi script `05_visualize_2d.py`.
 
 ## 2. Pipeline chuẩn
 
-![Pipeline thực nghiệm: dữ liệu được tiền xử lý một lần, sau đó rẽ nhánh sang SVC và SMO rồi so sánh trên cùng test set](images/experiment_pipeline.svg)
-
-Mã Mermaid có thể chỉnh sửa tại [`diagrams/experiment_pipeline.mmd`](diagrams/experiment_pipeline.mmd).
+```mermaid
+flowchart LR
+  DATA[UCI Banknote] --> SPLIT[Train/test stratified]
+  SPLIT --> SCALE[Fit scaler trên train]
+  SCALE --> BASE[SVC baseline]
+  SCALE --> CUSTOM[Custom SMO]
+  BASE --> METRICS[Metrics và confusion matrix]
+  CUSTOM --> METRICS
+  METRICS --> REPORT[Báo cáo]
+```
 
 ## 3. Các script
 
@@ -29,11 +36,6 @@ Mã Mermaid có thể chỉnh sửa tại [`diagrams/experiment_pipeline.mmd`](d
 | `03_custom_smo.py` | Tự cài SMO trên Banknote | `python -m experiments.03_custom_smo` |
 | `04_compare_C_kernel.py` | Khảo sát Linear/RBF và C | `python -m experiments.04_compare_C_kernel` |
 | `05_visualize_2d.py` | Vẽ boundary 2D trên hai feature đầu | `python -m experiments.05_visualize_2d` |
-| `06_report_benchmark.py` | Benchmark theo cấu trúc báo cáo: CV, baseline, custom SMO và figures | `python -m experiments.06_report_benchmark` |
-
-`06_report_benchmark.py` là entry point chính cho báo cáo Word. Script ghi số liệu vào
-`reports/data/` và các hình vào `reports/figures/`: bảng metrics, confusion matrices,
-heatmap C–gamma, ROC, boundary 2D và lịch sử objective của SMO.
 
 ## 4. Metrics cần trình bày
 
@@ -83,10 +85,7 @@ Giữ split cố định, chuẩn hóa dữ liệu, thử kernel Linear và RBF.
 - Sau khi chốt cấu hình, đánh giá test một lần.
 - Nếu có thời gian, báo cáo mean ± standard deviation của cross-validation.
 
-Script `04_compare_C_kernel.py` là script khảo sát nhạy cảm nhanh trên cùng test set.
-Benchmark chính thức dùng `06_report_benchmark.py`: GridSearchCV 5-fold chỉ trên train,
-chốt C/gamma rồi mới đánh giá test một lần. Vì vậy bảng benchmark phù hợp để đưa vào
-báo cáo hơn bảng khảo sát nhanh.
+Script `04_compare_C_kernel.py` hiện là script khảo sát nhạy cảm đơn giản trên cùng test set. Không dùng bảng này để tuyên bố cấu hình tốt nhất tổng quát; báo cáo chính thức nên bổ sung GridSearchCV hoặc cross-validation.
 
 ## 7. Phần tối ưu hóa cần được báo cáo
 

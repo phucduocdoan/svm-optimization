@@ -4,9 +4,33 @@ Tài liệu này là bản đồ từ lý thuyết sang từng file Python. Đ�
 
 ## 1. Sơ đồ luồng gọi hàm
 
-![Kiến trúc module: experiment, data, model, optimizer, math và evaluation được phân thành các lớp](images/architecture_layers.svg)
-
-Mã sơ đồ Mermaid: [`diagrams/class_diagram.mmd`](diagrams/class_diagram.mmd).
+```mermaid
+flowchart LR
+  subgraph ENTRY[Experiment layer]
+    EXP[experiments]
+    DATA[data.py]
+  end
+  subgraph MODEL[Model layer]
+    SVM[KernelSVM]
+    KERNEL[kernel.py]
+  end
+  subgraph OPT[Optimization layer]
+    SMO[SMOOptimizer]
+  end
+  subgraph MATH[Math toolbox]
+    GEOM[geometry]
+    PRIMAL[primal]
+    DUAL[dual]
+    KKT[kkt]
+  end
+  EXP --> DATA --> SVM
+  SVM --> KERNEL
+  SVM --> SMO
+  SVM -.-> GEOM
+  SVM -.-> PRIMAL
+  SVM -.-> DUAL
+  SVM -.-> KKT
+```
 
 ## 2. Nhóm toán học: `src/svm_optimization/math/`
 
@@ -126,9 +150,14 @@ Không dùng plot 2D như bằng chứng thay thế kết quả trên đủ bố
 
 ## 8. Thứ tự đọc code được khuyên dùng
 
-![SMO cập nhật theo cặp alpha, giữ ràng buộc equality và box constraints](images/smo_pair_update.svg)
-
-Mã sơ đồ: [`diagrams/smo_pair_update.mmd`](diagrams/smo_pair_update.mmd).
+```mermaid
+flowchart LR
+  A[Chọn i,j vi phạm KKT] --> B[Tính L,H và eta]
+  B --> C[Cập nhật alpha_j]
+  C --> D[Cập nhật alpha_i để giữ sum alpha*y = 0]
+  D --> E[Cập nhật bias b]
+  E --> F[Cập nhật error cache]
+```
 
 ## 9. Bài tập code nhỏ
 

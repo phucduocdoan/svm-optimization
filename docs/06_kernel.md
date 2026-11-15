@@ -7,10 +7,8 @@ Linear SVM tìm một ranh giới tuyến tính trong không gian đặc trưng 
 Kernel Trick thay tích vô hướng $x_i^T x_j$ trong Dual bằng một hàm kernel:
 
 $$
-K(x_i,x_j)=\phi(x_i)^T\phi(x_j)
+K(x_i,x_j)=\phi(x_i)^T\phi(x_j)\qquad\text{(6.1)}
 $$
-
-(6.1)
 
 Ta không cần tính tường minh vector $\phi(x)$ có thể nằm trong không gian rất nhiều chiều; chỉ cần tính kernel giữa hai điểm.
 
@@ -21,20 +19,16 @@ Ta không cần tính tường minh vector $\phi(x)$ có thể nằm trong khôn
 ## 2. Linear Kernel
 
 $$
-K(x,z)=x^Tz
+K(x,z)=x^Tz\qquad\text{(6.2)}
 $$
-
-(6.2)
 
 Đây chính là tích vô hướng thông thường. Dùng khi ranh giới tuyến tính là giả định hợp lý hoặc cần baseline dễ diễn giải.
 
 ## 3. RBF / Gaussian Kernel
 
 $$
-K(x,z)=\exp(-\gamma\|x-z\|^2),\qquad \gamma>0
+K(x,z)=\exp(-\gamma\|x-z\|^2),\qquad \gamma>0\qquad\text{(6.3)}
 $$
-
-(6.3)
 
 - Hai điểm gần nhau: kernel gần 1.
 - Hai điểm xa nhau: kernel gần 0.
@@ -48,10 +42,8 @@ Cũng phải điều chỉnh $C$ cùng gamma bằng validation.
 Từ $w=\sum_i\alpha_i y_i\phi(x_i)$, suy ra:
 
 $$
-f(x)=\sum_i\alpha_i y_i K(x_i,x)+b
+f(x)=\sum_i\alpha_i y_i K(x_i,x)+b\qquad\text{(6.4)}
 $$
-
-(6.4)
 
 Đây là công thức được dùng trong `KernelSVM.decision_function`.
 

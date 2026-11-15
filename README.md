@@ -4,7 +4,7 @@
 
 Project được thiết kế cho người mới học tối ưu hóa: mỗi chủ đề có tài liệu riêng, ví dụ số nhỏ, module Python tương ứng và bài kiểm tra. Không cần đọc hết code ngay từ đầu.
 
-> **Hiển thị công thức:** các file Markdown dùng inline `$...$` và block `$$...$$`; công thức chính có số đặt bên dưới. GitHub hỗ trợ trực tiếp cú pháp toán; xem [chỉ mục công thức](docs/11_formula_index.md) để tra số và [GitHub: Writing mathematical expressions](https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/writing-mathematical-expressions).
+> **Hiển thị công thức:** các file Markdown dùng inline `$...$` và block `$$...$$`; công thức chính có số cùng dòng. GitHub hỗ trợ trực tiếp cú pháp toán; xem [chỉ mục công thức](docs/11_formula_index.md) để tra số và [GitHub: Writing mathematical expressions](https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/writing-mathematical-expressions).
 
 ## 1. Kết quả học tập kỳ vọng
 

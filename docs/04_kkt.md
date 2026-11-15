@@ -7,10 +7,8 @@ KKT là bộ điều kiện liên hệ nghiệm tối ưu với ràng buộc. V�
 ### A. Primal feasibility — nghiệm Primal khả thi
 
 $$
-y_i(w^Tx_i+b)\geq1-\xi_i,\qquad \xi_i\geq0
+y_i(w^Tx_i+b)\geq1-\xi_i,\qquad \xi_i\geq0\qquad\text{(4.1)}
 $$
-
-(4.1)
 
 Nói dễ hiểu: mô hình không được vi phạm các ràng buộc gốc.
 
@@ -39,16 +37,12 @@ $$
 ### D. Complementary slackness — điều kiện bù
 
 $$
-\alpha_i[y_i(w^Tx_i+b)-1+\xi_i]=0
+\alpha_i[y_i(w^Tx_i+b)-1+\xi_i]=0\qquad\text{(4.2)}
 $$
 
-(4.2)
-
 $$
-\mu_i\xi_i=0
+\mu_i\xi_i=0\qquad\text{(4.3)}
 $$
-
-(4.3)
 
 Một tích bằng 0 nghĩa là ít nhất một trong hai thừa số phải bằng 0. Đây là chìa khóa để hiểu Support Vectors.
 

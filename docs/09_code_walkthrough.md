@@ -114,7 +114,7 @@ Luồng `predict(X)` chỉ lấy dấu của decision score.
 | Khởi tạo alpha/b/errors | Vì sao ban đầu error bằng `-y`? |
 | `violates_kkt` | Điều kiện nào khiến mẫu cần update? |
 | Tính L/H | Cận nào giữ alpha nằm trong [0,C]? |
-| $\eta$ và `aj_new` | Đây là tối ưu một chiều theo alpha_j như thế nào? |
+| $\eta$ và `aj_new` | Đây là tối ưu một chiều theo $\alpha_j$ như thế nào? |
 | `ai_new` | Làm sao giữ $\sum_i\alpha_i y_i=0$? |
 | `b1`, `b2` | Vì sao hai điểm cập nhật có thể đưa ra hai bias? |
 | `errors += ...` | Vì sao có thể cập nhật cache thay vì tính lại mọi score? |

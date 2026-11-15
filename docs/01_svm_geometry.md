@@ -11,10 +11,8 @@ Ví dụ `x = [variance, skewness, curtosis, entropy]` là một mẫu tiền gi
 Một siêu phẳng được viết:
 
 $$
-f(x)=w^T x+b=0
+f(x)=w^T x+b=0\qquad\text{(1.1)}
 $$
-
-(1.1)
 
 - $w$ là vector pháp tuyến, chỉ hướng vuông góc với siêu phẳng.
 - $b$ dịch chuyển siêu phẳng.
@@ -32,10 +30,8 @@ Trong 2D, siêu phẳng là đường thẳng. Nếu `w=[2,1]`, `b=-3`, đườn
 Với một điểm $x$, khoảng cách hình học là:
 
 $$
-d(x,H)=\frac{|w^T x+b|}{\|w\|_2}
+d(x,H)=\frac{|w^T x+b|}{\|w\|_2}\qquad\text{(1.2)}
 $$
-
-(1.2)
 
 Tại sao phải chia cho $\|w\|$? Nếu nhân cả $w$ và $b$ với 10 thì phương trình siêu phẳng không đổi. Chia cho độ dài vector pháp tuyến làm khoảng cách không phụ thuộc cách scale phương trình.
 
@@ -50,28 +46,22 @@ $$
 Khoảng cách giữa hai mặt biên là:
 
 $$
-\text{margin}=\frac{2}{\|w\|_2}
+\text{margin}=\frac{2}{\|w\|_2}\qquad\text{(1.3)}
 $$
-
-(1.3)
 
 Vì vậy, tối đa hóa margin tương đương tối thiểu hóa $\|w\|$. Ta dùng bình phương và hệ số 1/2 vì đạo hàm gọn hơn:
 
 $$
-\min_{w,b}\frac12\|w\|_2^2
+\min_{w,b}\frac12\|w\|_2^2\qquad\text{(1.4)}
 $$
-
-(1.4)
 
 ## 5. Ràng buộc phân loại
 
 Một cách viết gọn cho cả hai lớp:
 
 $$
-y_i(w^T x_i+b)\geq 1
+y_i(w^T x_i+b)\geq 1\qquad\text{(1.5)}
 $$
-
-(1.5)
 
 - Nếu $y_i=+1$, yêu cầu $f(x_i)\geq1$.
 - Nếu $y_i=-1$, yêu cầu $f(x_i)\leq-1$.

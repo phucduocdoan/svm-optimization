@@ -5,26 +5,20 @@
 SMO giải bài toán Dual:
 
 $$
-\max_\alpha W(\alpha)=\sum_i\alpha_i-\frac12\sum_{i,j}\alpha_i\alpha_jy_iy_jK(x_i,x_j)
+\max_\alpha W(\alpha)=\sum_i\alpha_i-\frac12\sum_{i,j}\alpha_i\alpha_jy_iy_jK(x_i,x_j)\qquad\text{(5.1)}
 $$
-
-(5.1)
 
 với:
 
 $$
-\sum_i\alpha_i y_i=0,\qquad 0\leq\alpha_i\leq C
+\sum_i\alpha_i y_i=0,\qquad 0\leq\alpha_i\leq C\qquad\text{(5.2)}
 $$
-
-(5.2)
 
 Nếu tối ưu từng $\alpha_i$ độc lập, ta có thể làm hỏng ràng buộc đẳng thức. SMO xử lý bằng cách cập nhật **hai alpha cùng lúc** để vẫn giữ:
 
 $$
-y_i\Delta\alpha_i+y_j\Delta\alpha_j=0
+y_i\Delta\alpha_i+y_j\Delta\alpha_j=0\qquad\text{(5.3)}
 $$
-
-(5.3)
 
 ```mermaid
 flowchart LR
@@ -85,25 +79,21 @@ L=\max(0,\alpha_i+\alpha_j-C),\quad
 H=\min(C,\alpha_i+\alpha_j).
 $$
 
-Hai công thức khác nhau vì dấu của hai nhãn quyết định quan hệ giữa alpha_i và alpha_j khi giữ equality constraint.
+Hai công thức khác nhau vì dấu của hai nhãn quyết định quan hệ giữa $\alpha_i$ và $\alpha_j$ khi giữ equality constraint.
 
-## 5. Cập nhật alpha_j
+## 5. Cập nhật $\alpha_j$
 
 Tính:
 
 $$
-\eta=2K_{ij}-K_{ii}-K_{jj}
+\eta=2K_{ij}-K_{ii}-K_{jj}\qquad\text{(5.4)}
 $$
-
-(5.4)
 
 Với kernel hợp lệ, Gram matrix là positive semidefinite nên $\eta$ thường không dương. Khi $\eta$ âm đủ xa 0:
 
 $$
-\alpha_j^{new}=\alpha_j^{old}-\frac{y_j(E_i-E_j)}{\eta}
+\alpha_j^{new}=\alpha_j^{old}-\frac{y_j(E_i-E_j)}{\eta}\qquad\text{(5.5)}
 $$
-
-(5.5)
 
 Sau đó clip về đoạn [L,H]:
 
@@ -111,15 +101,13 @@ $$
 \alpha_j^{new}\leftarrow\min(H,\max(L,\alpha_j^{new})).
 $$
 
-## 6. Cập nhật alpha_i
+## 6. Cập nhật $\alpha_i$
 
 Giữ ràng buộc đẳng thức bằng:
 
 $$
-\alpha_i^{new}=\alpha_i^{old}+y_i y_j(\alpha_j^{old}-\alpha_j^{new})
+\alpha_i^{new}=\alpha_i^{old}+y_i y_j(\alpha_j^{old}-\alpha_j^{new})\qquad\text{(5.6)}
 $$
-
-(5.6)
 
 Như vậy hai alpha thay đổi có liên hệ, không phải hai cập nhật tùy ý.
 
@@ -170,7 +158,7 @@ Bạn nên đọc theo thứ tự:
 ## 10. Bạn cần tự trả lời
 
 1. Vì sao SMO cập nhật hai alpha chứ không phải một?
-2. Việc clip alpha_j vào [L,H] đảm bảo điều gì?
+2. Việc clip $\alpha_j$ vào $[L,H]$ đảm bảo điều gì?
 3. $E_i$ khác margin $y_i f(x_i)$ như thế nào?
 4. Vì sao bias có hai ứng viên b1 và b2?
 5. Nếu $\eta$ gần 0, vì sao công thức cập nhật có thể không ổn định?

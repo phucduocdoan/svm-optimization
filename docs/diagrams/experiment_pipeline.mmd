@@ -1,0 +1,8 @@
+flowchart LR
+  A["UCI Banknote"] --> B["Validate + encode labels"] --> C["Stratified split"] --> D["Fit scaler on train only"]
+  D --> E["Transform train / test"]
+  E --> F["sklearn SVC baseline"]
+  E --> G["Custom KernelSVM + SMO"]
+  F --> H["Same held-out test set"]
+  G --> H
+  H --> I["Metrics + support vectors"] --> J["Optimization analysis"] --> K["Report"]

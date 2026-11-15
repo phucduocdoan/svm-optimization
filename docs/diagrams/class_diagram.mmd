@@ -1,0 +1,30 @@
+flowchart LR
+  subgraph ENTRY["Experiment layer"]
+    EXP["experiments/*.py"]
+  end
+  subgraph MODEL["Model layer"]
+    SVM["KernelSVM"]
+    KERNEL["Kernel functions\nLinear / RBF"]
+  end
+  subgraph OPT["Optimization layer"]
+    SMO["SMOOptimizer"]
+  end
+  subgraph MATH["Math toolbox"]
+    GEO["geometry.py"]
+    PRIMAL["primal.py"]
+    DUAL["dual.py"]
+    KKT["kkt.py"]
+  end
+  subgraph OUT["Evaluation layer"]
+    MET["evaluation.py"]
+    VIZ["visualization.py"]
+  end
+  EXP --> SVM
+  SVM --> KERNEL
+  SVM --> SMO
+  SMO -. "dual objective / constraints" .-> DUAL
+  SMO -. "optimality checks" .-> KKT
+  SVM -. "margin helpers" .-> GEO
+  EXP -. "primal analysis" .-> PRIMAL
+  SVM --> MET
+  SVM --> VIZ

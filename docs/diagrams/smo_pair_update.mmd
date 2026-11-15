@@ -1,0 +1,4 @@
+flowchart LR
+  A["Chọn αᵢ, αⱼ"] --> B["Tính bounds L, H"] --> C["Tối ưu αⱼ trên [L,H]"] --> D["Suy ra αᵢ để giữ equality"] --> E["Cập nhật bias + error cache"] --> F{"KKT còn vi phạm?"}
+  F -->|Có| A
+  F -->|Không| G["Dừng khi thỏa tiêu chí hội tụ"]

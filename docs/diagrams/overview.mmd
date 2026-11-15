@@ -1,0 +1,28 @@
+flowchart LR
+  subgraph P1["01 · MÔ HÌNH HÓA"]
+    direction TB
+    A["Hình học SVM"] --> B["Soft-margin Primal QP"]
+  end
+  subgraph P2["02 · BIẾN ĐỔI TOÁN"]
+    direction TB
+    C["Lagrangian"] --> D["Stationarity"] --> E["Dual QP"]
+  end
+  subgraph P3["03 · GIẢI TỐI ƯU"]
+    direction TB
+    F["KKT conditions"] --> G["SMO pair updates"]
+  end
+  subgraph P4["04 · TRIỂN KHAI & KIỂM CHỨNG"]
+    direction TB
+    H["KernelSVM"] --> I["Banknote experiments"] --> J["Analysis & report"]
+  end
+  B --> C
+  E --> F
+  G --> H
+  classDef model fill:#EAF0FF,stroke:#356AE6,color:#17233B,stroke-width:1.5px
+  classDef math fill:#E5F5F2,stroke:#138A83,color:#17233B,stroke-width:1.5px
+  classDef opt fill:#F0ECFB,stroke:#7757C7,color:#17233B,stroke-width:1.5px
+  classDef app fill:#FFF3E4,stroke:#C77822,color:#17233B,stroke-width:1.5px
+  class A,B model
+  class C,D,E math
+  class F,G opt
+  class H,I,J app

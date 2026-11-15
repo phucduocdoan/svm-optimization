@@ -59,9 +59,10 @@ $$
 
 Lấy hai mẫu một chiều $x_1=-1$, $x_2=1$, nhãn $y_1=-1$, $y_2=1$ và RBF với $\gamma=0.5$. Phần tử hàng $i$, cột $j$ của Gram matrix là $K(x_i,x_j)$:
 
-$$
-K_{\mathrm{RBF}}=\begin{bmatrix}1 & e^{-2} \\ e^{-2} & 1\end{bmatrix}\approx\begin{bmatrix}1 & 0.1353 \\ 0.1353 & 1\end{bmatrix}.
-$$
+| $K(x_i,x_j)$ | $x_1=-1$ | $x_2=1$ |
+|---|---:|---:|
+| $x_1=-1$ | $1$ | $e^{-2}\approx0.1353$ |
+| $x_2=1$ | $e^{-2}\approx0.1353$ | $1$ |
 
 Với điểm mới $x=0.5$, ta tính $K(x_1,x)\approx0.3247$ và $K(x_2,x)\approx0.8825$. Trên ví dụ này với $C=1$, mô hình học được $\alpha_1=\alpha_2=1$ và $b\approx0$. Thay vào công thức (6.4):
 

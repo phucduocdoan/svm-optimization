@@ -4,6 +4,10 @@ Tài liệu này là bản đồ từ lý thuyết sang từng file Python. Đ�
 
 ## 1. Sơ đồ luồng gọi hàm
 
+![Pipeline machine learning tham khảo](https://commons.wikimedia.org/wiki/Special:FilePath/Machine_Learning_Pipeline_in_Production.png?width=1200)
+
+Hình web này giúp định vị các lớp dữ liệu, tiền xử lý, modeling và đánh giá; sơ đồ gọi hàm cụ thể của repository vẫn là Mermaid ngay dưới đây. Nguồn: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Machine_Learning_Pipeline_in_Production.png), CC BY-SA 4.0.
+
 ```mermaid
 flowchart LR
   subgraph ENTRY[Experiment layer]

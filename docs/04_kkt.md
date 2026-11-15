@@ -2,12 +2,16 @@
 
 KKT là bộ điều kiện liên hệ nghiệm tối ưu với ràng buộc. Với bài toán lồi và điều kiện chính quy phù hợp, KKT là điều kiện cần và đủ để một nghiệm khả thi là nghiệm tối ưu.
 
+![Support vectors và siêu phẳng phân tách](https://commons.wikimedia.org/wiki/Special:FilePath/Supporting_Vector_Machine.png?width=1200)
+
+Hình chỉ minh họa vai trò hình học của các điểm sát biên; việc xác định support vector trong project được kiểm tra thêm bằng alpha và residual KKT. Nguồn: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Supporting_Vector_Machine.png), CC BY-SA 4.0.
+
 ## 1. Bốn nhóm điều kiện
 
 ### A. Primal feasibility — nghiệm Primal khả thi
 
 $$
-y_i(w^Tx_i+b)\geq1-\xi_i,\qquad \xi_i\geq0.
+y_i(w^Tx_i+b)\geq1-\xi_i,\qquad \xi_i\geq0 \tag{4.1}
 $$
 
 Nói dễ hiểu: mô hình không được vi phạm các ràng buộc gốc.
@@ -37,11 +41,11 @@ $$
 ### D. Complementary slackness — điều kiện bù
 
 $$
-\alpha_i[y_i(w^Tx_i+b)-1+\xi_i]=0,
+\alpha_i[y_i(w^Tx_i+b)-1+\xi_i]=0 \tag{4.2}
 $$
 
 $$
-\mu_i\xi_i=0.
+\mu_i\xi_i=0 \tag{4.3}
 $$
 
 Một tích bằng 0 nghĩa là ít nhất một trong hai thừa số phải bằng 0. Đây là chìa khóa để hiểu Support Vectors.

@@ -7,7 +7,7 @@ Hard-margin đòi mọi mẫu thỏa `y_i f(x_i)>=1`. Điều đó không phù h
 Soft-margin thêm một biến `xi_i >= 0` cho mỗi mẫu để cho phép vi phạm biên có kiểm soát:
 
 $$
-y_i(w^T x_i+b)\geq 1-\xi_i,\qquad \xi_i\geq0.
+y_i(w^T x_i+b)\geq 1-\xi_i,\qquad \xi_i\geq0 \tag{2.1}
 $$
 
 `xi_i` là slack variable. Nó đo mức vi phạm margin theo cách tối ưu.
@@ -18,10 +18,14 @@ $$
 
 Hình minh họa lấy từ [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:SVM_margins.png), public domain; dùng để minh họa margin trước khi đi vào slack variable, không phải kết quả trên Banknote.
 
+![So sánh các hàm loss cho phân loại nhị phân](https://commons.wikimedia.org/wiki/Special:FilePath/Comparison_of_Loss_functions_for_binary_classification.png?width=1200)
+
+Hình này giúp đặt hinge loss trong bối cảnh các hàm mất mát khác; không dùng nó như kết quả benchmark. Nguồn: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Comparison_of_Loss_functions_for_binary_classification.png).
+
 ## 2. Hàm mục tiêu
 
 $$
-\boxed{\min_{w,b,\xi}\quad \frac12\|w\|^2+C\sum_{i=1}^{n}\xi_i}
+\boxed{\min_{w,b,\xi}\quad \frac12\|w\|^2+C\sum_{i=1}^{n}\xi_i} \tag{2.2}
 $$
 
 với hai nhóm ràng buộc ở trên.
@@ -42,13 +46,13 @@ Không có giá trị C luôn tốt nhất; phải chọn bằng validation/cros
 Nếu cố định `w,b`, slack nhỏ nhất thỏa ràng buộc là:
 
 $$
-\xi_i=\max(0,1-y_i f(x_i)).
+\xi_i=\max(0,1-y_i f(x_i)) \tag{2.3}
 $$
 
 Biểu thức này gọi là hinge loss. Vì vậy có thể viết mục tiêu tương đương:
 
 $$
-\frac12\|w\|^2+C\sum_i\max(0,1-y_i f(x_i)).
+\frac12\|w\|^2+C\sum_i\max(0,1-y_i f(x_i)) \tag{2.4}
 $$
 
 ## 4. Ví dụ số

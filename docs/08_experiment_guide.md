@@ -14,6 +14,10 @@ Project dùng `ucimlrepo` để tải lần đầu, sau đó cache CSV trong `da
 
 Hình trên lấy từ Wikimedia Commons để minh họa margin; không đại diện cho kết quả huấn luyện Banknote. Kết quả Banknote thật được sinh ra bởi script `05_visualize_2d.py`.
 
+![Machine learning pipeline](https://commons.wikimedia.org/wiki/Special:FilePath/Machine_Learning_Pipeline_in_Production.png?width=1200)
+
+Pipeline trên là hình tham khảo tổng quát; pipeline thực nghiệm của project được khóa bằng Mermaid ở phần 2 và có scaler chỉ fit trên train. Nguồn: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Machine_Learning_Pipeline_in_Production.png), CC BY-SA 4.0.
+
 ## 2. Pipeline chuẩn
 
 ```mermaid
@@ -38,6 +42,12 @@ flowchart LR
 | `05_visualize_2d.py` | Vẽ boundary 2D trên hai feature đầu | `python -m experiments.05_visualize_2d` |
 
 ## 4. Metrics cần trình bày
+
+![Confusion matrix](https://commons.wikimedia.org/wiki/Special:FilePath/ConfusionMatrix.png?width=1000)
+
+![ROC curves](https://commons.wikimedia.org/wiki/Special:FilePath/Example_ROC_curves.png?width=1000)
+
+Hai hình trên là sơ đồ đọc metrics, không phải ma trận/ROC của split Banknote. Các biểu đồ benchmark thật nằm trong `reports/figures/`.
 
 - **Accuracy:** tỷ lệ dự đoán đúng tổng thể.
 - **Precision (+1):** trong các mẫu dự đoán +1, có bao nhiêu mẫu thật sự +1.

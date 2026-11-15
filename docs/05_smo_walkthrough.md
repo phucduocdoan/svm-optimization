@@ -5,19 +5,23 @@
 SMO giải bài toán Dual:
 
 $$
-\max_\alpha W(\alpha)=\sum_i\alpha_i-\frac12\sum_{i,j}\alpha_i\alpha_jy_iy_jK(x_i,x_j)
+\max_\alpha W(\alpha)=\sum_i\alpha_i-\frac12\sum_{i,j}\alpha_i\alpha_jy_iy_jK(x_i,x_j) \tag{5.1}
 $$
 
 với:
 
 $$
-\sum_i\alpha_i y_i=0,\qquad 0\leq\alpha_i\leq C.
+\sum_i\alpha_i y_i=0,\qquad 0\leq\alpha_i\leq C \tag{5.2}
 $$
 
 Nếu tối ưu từng `alpha_i` độc lập, ta có thể làm hỏng ràng buộc đẳng thức. SMO xử lý bằng cách cập nhật **hai alpha cùng lúc** để vẫn giữ:
 
+![Trực giác đi xuống trên hàm mục tiêu](https://commons.wikimedia.org/wiki/Special:FilePath/Gradient_descent.png?width=1000)
+
+Đây là hình minh họa trực giác tối ưu hóa nói chung. SMO không đi theo một gradient descent đơn giản; nó tối ưu một bài toán con hai biến và giữ ràng buộc `sum(alpha*y)=0`. Nguồn: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Gradient_descent.png), public domain.
+
 $$
-y_i\Delta\alpha_i+y_j\Delta\alpha_j=0.
+y_i\Delta\alpha_i+y_j\Delta\alpha_j=0 \tag{5.3}
 $$
 
 ## 2. Các ký hiệu cần hiểu
@@ -63,13 +67,13 @@ Hai công thức khác nhau vì dấu của hai nhãn quyết định quan hệ 
 Tính:
 
 $$
-\eta=2K_{ij}-K_{ii}-K_{jj}.
+\eta=2K_{ij}-K_{ii}-K_{jj} \tag{5.4}
 $$
 
 Với kernel hợp lệ, Gram matrix là positive semidefinite nên `eta` thường không dương. Khi `eta` âm đủ xa 0:
 
 $$
-\alpha_j^{new}=\alpha_j^{old}-\frac{y_j(E_i-E_j)}{\eta}.
+\alpha_j^{new}=\alpha_j^{old}-\frac{y_j(E_i-E_j)}{\eta} \tag{5.5}
 $$
 
 Sau đó clip về đoạn [L,H]:
@@ -83,7 +87,7 @@ $$
 Giữ ràng buộc đẳng thức bằng:
 
 $$
-\alpha_i^{new}=\alpha_i^{old}+y_i y_j(\alpha_j^{old}-\alpha_j^{new}).
+\alpha_i^{new}=\alpha_i^{old}+y_i y_j(\alpha_j^{old}-\alpha_j^{new}) \tag{5.6}
 $$
 
 Như vậy hai alpha thay đổi có liên hệ, không phải hai cập nhật tùy ý.

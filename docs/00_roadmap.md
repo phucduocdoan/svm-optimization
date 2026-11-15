@@ -18,6 +18,10 @@ flowchart LR
 
 Bản sơ đồ Mermaid có thể chỉnh sửa tại [`diagrams/overview.mmd`](diagrams/overview.mmd).
 
+![Pipeline học máy tổng quát](https://commons.wikimedia.org/wiki/Special:FilePath/Machine_Learning_Pipeline_in_Production.png?width=1200)
+
+Hình pipeline chỉ dùng để hình dung mối liên hệ giữa dữ liệu, tiền xử lý, mô hình và đánh giá; pipeline Banknote cụ thể được mô tả bằng Mermaid ở phần dưới. Nguồn: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Machine_Learning_Pipeline_in_Production.png), CC BY-SA 4.0.
+
 ## Thứ tự học 20/80
 
 | Chặng | Chủ đề | Câu hỏi phải trả lời |

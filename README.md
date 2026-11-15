@@ -24,7 +24,19 @@ Nguồn: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Kernel_tric
 
 Hình minh họa lấy từ Wikimedia Commons; không phải kết quả huấn luyện Banknote.
 
-> **Hiển thị công thức:** các file Markdown dùng cú pháp inline `$...$` và block `$$...$$`, được GitHub hỗ trợ trực tiếp bằng MathJax. Nếu mở trong VS Code, hãy dùng Markdown preview có hỗ trợ MathJax/KaTeX. Xem [GitHub: Writing mathematical expressions](https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/writing-mathematical-expressions).
+**Tối ưu hóa, pipeline và đánh giá mô hình**
+
+![Gradient descent](https://commons.wikimedia.org/wiki/Special:FilePath/Gradient_descent.png?width=1000)
+
+![Machine learning pipeline](https://commons.wikimedia.org/wiki/Special:FilePath/Machine_Learning_Pipeline_in_Production.png?width=1200)
+
+![Confusion matrix](https://commons.wikimedia.org/wiki/Special:FilePath/ConfusionMatrix.png?width=1000)
+
+![ROC curves](https://commons.wikimedia.org/wiki/Special:FilePath/Example_ROC_curves.png?width=1000)
+
+Các hình trên là minh họa khái niệm từ [Wikimedia Commons](docs/10_image_credits.md); biểu đồ kết quả thật nằm trong `reports/figures/` và được sinh lại bằng benchmark.
+
+> **Hiển thị công thức:** các file Markdown dùng inline `$...$` và block `$$...$$`; công thức chính có `\tag{...}` để đánh số. GitHub hỗ trợ trực tiếp bằng MathJax; xem [chỉ mục công thức](docs/11_formula_index.md) để tra số và [GitHub: Writing mathematical expressions](https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/writing-mathematical-expressions).
 
 ## 1. Kết quả học tập kỳ vọng
 
@@ -64,6 +76,7 @@ flowchart LR
 | 8. Thực nghiệm | `docs/08_experiment_guide.md` | `experiments/` | So sánh và viết nhận xét |
 | 9. Hướng dẫn đọc code | `docs/09_code_walkthrough.md` | Tất cả module | Biết mỗi file làm gì và đọc theo thứ tự nào |
 | 10. Nguồn hình | `docs/10_image_credits.md` | Hình minh họa | Kiểm tra nguồn và giấy phép hình |
+| 11. Chỉ mục công thức | `docs/11_formula_index.md` | Công thức LaTeX | Tra số và dẫn chiếu công thức |
 
 ## 3. Sơ đồ kiến trúc code
 

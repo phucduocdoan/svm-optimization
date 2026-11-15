@@ -11,7 +11,7 @@ Ví dụ `x = [variance, skewness, curtosis, entropy]` là một mẫu tiền gi
 Một siêu phẳng được viết:
 
 $$
-f(x)=w^T x+b=0.
+f(x)=w^T x+b=0 \tag{1.1}
 $$
 
 - `w` là vector pháp tuyến, chỉ hướng vuông góc với siêu phẳng.
@@ -27,12 +27,16 @@ Trong 2D, siêu phẳng là đường thẳng. Nếu `w=[2,1]`, `b=-3`, đườn
 
 Hình lấy từ [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:SVM_margins.png), public domain. Đây là minh họa ý tưởng, không phải kết quả huấn luyện Banknote.
 
+![SVM và ánh xạ sang không gian phân tách](https://commons.wikimedia.org/wiki/Special:FilePath/Supporting_Vector_Machine.png?width=1200)
+
+Hình bổ sung cho thấy trực giác support vectors và siêu phẳng trong không gian phân tách. Nguồn: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Supporting_Vector_Machine.png), Pkuwangyan06, CC BY-SA 4.0.
+
 ## 3. Khoảng cách từ điểm đến siêu phẳng
 
 Với một điểm `x`, khoảng cách hình học là:
 
 $$
-d(x,H)=\frac{|w^T x+b|}{\|w\|_2}.
+d(x,H)=\frac{|w^T x+b|}{\|w\|_2} \tag{1.2}
 $$
 
 Tại sao phải chia cho `||w||`? Nếu nhân cả `w` và `b` với 10 thì phương trình siêu phẳng không đổi. Chia cho độ dài vector pháp tuyến làm khoảng cách không phụ thuộc cách scale phương trình.
@@ -48,13 +52,13 @@ $$
 Khoảng cách giữa hai mặt biên là:
 
 $$
-\text{margin}=\frac{2}{\|w\|_2}.
+\text{margin}=\frac{2}{\|w\|_2} \tag{1.3}
 $$
 
 Vì vậy, tối đa hóa margin tương đương tối thiểu hóa `||w||`. Ta dùng bình phương và hệ số 1/2 vì đạo hàm gọn hơn:
 
 $$
-\min_{w,b}\frac12\|w\|_2^2.
+\min_{w,b}\frac12\|w\|_2^2 \tag{1.4}
 $$
 
 ## 5. Ràng buộc phân loại
@@ -62,7 +66,7 @@ $$
 Một cách viết gọn cho cả hai lớp:
 
 $$
-y_i(w^T x_i+b)\geq 1.
+y_i(w^T x_i+b)\geq 1 \tag{1.5}
 $$
 
 - Nếu `y_i=+1`, yêu cầu `f(x_i)>=1`.

@@ -37,7 +37,7 @@ flowchart LR
 | 2. Primal | `docs/02_primal_soft_margin.md` | `math/primal.py` | Tính hinge loss và objective |
 | 3. Dual | `docs/03_lagrange_dual.md` | `math/dual.py` | Tính dual objective, kiểm tra khả thi |
 | 4. KKT | `docs/04_kkt.md` | `math/kkt.py` | Diễn giải alpha và support vectors |
-| 5. Ví dụ giải tay | `docs/07_hand_example.md` | `python -m experiments.02_hand_example` | Thấy primal = dual = 0.25 |
+| 5. Ví dụ giải tay | `docs/07_hand_example.md` | `uv run python -m experiments.02_hand_example` | Thấy primal = dual = 0.25 |
 | 6. SMO | `docs/05_smo_walkthrough.md` | `optimization/smo.py` | Hiểu cập nhật cặp alpha |
 | 7. Kernel | `docs/06_kernel.md` | `models/kernel.py` | Linear và RBF kernel |
 | 8. Thực nghiệm | `docs/08_experiment_guide.md` | `experiments/` | So sánh và viết nhận xét |
@@ -68,36 +68,20 @@ Nguồn sơ đồ có thể chỉnh sửa: [`docs/diagrams/architecture.mmd`](do
 
 Yêu cầu Python 3.10 trở lên.
 
-### Windows PowerShell
-
-```powershell
-cd svm_optimization_project
-py -m venv .venv
-.venv\Scripts\Activate.ps1
-python -m pip install --upgrade pip
-pip install -r requirements.txt
-pip install -e .
-```
-
-### macOS / Linux
+Cài [uv](https://docs.astral.sh/uv/getting-started/installation/) và chạy từ thư mục gốc project:
 
 ```bash
-cd svm_optimization_project
-python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install --upgrade pip
-pip install -r requirements.txt
-pip install -e .
+uv sync --locked
 ```
 
-Nếu chưa muốn cài package ở chế độ editable, có thể chạy với `PYTHONPATH=src` (Linux/macOS) hoặc thêm `src` vào `PYTHONPATH` trên Windows. Cách dễ nhất là dùng `pip install -e .`.
+Lệnh tạo `.venv` và cài project cùng các dependency theo `uv.lock`. Dùng `uv run` để chạy trong môi trường đó mà không cần kích hoạt thủ công.
 
 ## 5. Chạy theo thứ tự khuyến nghị
 
 **Bước A — xác nhận công thức toán trước:**
 
 ```bash
-python -m experiments.02_hand_example
+uv run python -m experiments.02_hand_example
 ```
 
 Kết quả giải tích kỳ vọng:
@@ -111,19 +95,19 @@ Kết quả giải tích kỳ vọng:
 **Bước B — chạy SVM thư viện làm baseline:**
 
 ```bash
-python -m experiments.01_baseline_sklearn
+uv run python -m experiments.01_baseline_sklearn
 ```
 
 **Bước C — chạy SMO tự cài:**
 
 ```bash
-python -m experiments.03_custom_smo
+uv run python -m experiments.03_custom_smo
 ```
 
 **Bước D — khảo sát C và kernel:**
 
 ```bash
-python -m experiments.04_compare_C_kernel
+uv run python -m experiments.04_compare_C_kernel
 ```
 
 Mặc định bước D dùng `sklearn.svm.SVC` để chạy nhanh. Mở file và đặt `USE_CUSTOM = True` để khảo sát phiên bản SMO tự cài. Bản SMO ở đây hướng tới học thuật và minh họa, không nhắm đến tốc độ của LIBSVM.
@@ -131,7 +115,7 @@ Mặc định bước D dùng `sklearn.svm.SVC` để chạy nhanh. Mở file v�
 **Ví dụ kernel trick — tính Gram matrix và score dự đoán:**
 
 ```bash
-python -m experiments.07_kernel_trick
+uv run python -m experiments.07_kernel_trick
 ```
 
 Xem phép tính từng bước trong [hướng dẫn kernel](docs/06_kernel.md#ví-dụ-số-từ-kernel-đến-dự-đoán).
@@ -139,7 +123,7 @@ Xem phép tính từng bước trong [hướng dẫn kernel](docs/06_kernel.md#v
 **Bước E — chạy tests:**
 
 ```bash
-pytest -q
+uv run pytest -q
 ```
 
 ## 6. Dataset: Banknote Authentication
@@ -165,7 +149,7 @@ Nhãn gốc được mã hóa tăng dần thành `-1` và `+1` để phù hợp 
 ```text
 svm_optimization_project/
 ├── README.md
-├── requirements.txt
+├── uv.lock
 ├── pyproject.toml
 ├── docs/                         # Lý thuyết, ví dụ, hướng dẫn từng bước
 │   ├── 00_roadmap.md

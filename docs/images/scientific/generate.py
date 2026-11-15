@@ -1,4 +1,4 @@
-"""Tạo hình minh họa SVM. Chạy: python docs/images/scientific/generate.py."""
+"""Tạo hình minh họa SVM. Chạy: uv run python docs/images/scientific/generate.py."""
 from pathlib import Path
 
 import matplotlib

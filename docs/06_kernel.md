@@ -65,7 +65,7 @@ $$
 Score dương nên mô hình dự đoán lớp $+1$. Các số trên dùng mẫu rất nhỏ để học cách tính, không phải kết quả Banknote. Chạy ví dụ để xem cả Gram matrix Linear, từng số hạng và score từ `KernelSVM`:
 
 ```bash
-python -m experiments.07_kernel_trick
+uv run python -m experiments.07_kernel_trick
 ```
 
 ## 5. Liên hệ với code

@@ -39,12 +39,12 @@ Nguồn: [`diagrams/experiment_pipeline.mmd`](diagrams/experiment_pipeline.mmd).
 
 | Script | Vai trò | Lệnh |
 |---|---|---|
-| `01_baseline_sklearn.py` | Baseline đáng tin cậy bằng SVC | `python -m experiments.01_baseline_sklearn` |
-| `02_hand_example.py` | Đối chiếu giải tay và SMO | `python -m experiments.02_hand_example` |
-| `03_custom_smo.py` | Tự cài SMO trên Banknote | `python -m experiments.03_custom_smo` |
-| `04_compare_C_kernel.py` | Khảo sát Linear/RBF và C | `python -m experiments.04_compare_C_kernel` |
-| `05_visualize_2d.py` | Vẽ boundary 2D trên hai feature đầu | `python -m experiments.05_visualize_2d` |
-| `07_kernel_trick.py` | Ví dụ số về Gram matrix và score dự đoán | `python -m experiments.07_kernel_trick` |
+| `01_baseline_sklearn.py` | Baseline đáng tin cậy bằng SVC | `uv run python -m experiments.01_baseline_sklearn` |
+| `02_hand_example.py` | Đối chiếu giải tay và SMO | `uv run python -m experiments.02_hand_example` |
+| `03_custom_smo.py` | Tự cài SMO trên Banknote | `uv run python -m experiments.03_custom_smo` |
+| `04_compare_C_kernel.py` | Khảo sát Linear/RBF và C | `uv run python -m experiments.04_compare_C_kernel` |
+| `05_visualize_2d.py` | Vẽ boundary 2D trên hai feature đầu | `uv run python -m experiments.05_visualize_2d` |
+| `07_kernel_trick.py` | Ví dụ số về Gram matrix và score dự đoán | `uv run python -m experiments.07_kernel_trick` |
 
 ## 4. Metrics cần trình bày
 
@@ -80,7 +80,7 @@ Thử `C = 0.1, 1, 10`. Quan sát:
 
 ### Thí nghiệm D — trực quan hóa ranh giới 2D
 
-Chạy `python -m experiments.05_visualize_2d`. Script chỉ dùng hai feature đầu để tạo hình minh họa boundary, margin và support vectors. Đây không phải kết quả chính của mô hình bốn feature; hãy nêu rõ sự khác biệt trong báo cáo.
+Chạy `uv run python -m experiments.05_visualize_2d`. Script chỉ dùng hai feature đầu để tạo hình minh họa boundary, margin và support vectors. Đây không phải kết quả chính của mô hình bốn feature; hãy nêu rõ sự khác biệt trong báo cáo.
 
 ### Thí nghiệm E — Linear so với RBF
 

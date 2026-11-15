@@ -1,7 +1,8 @@
 """Render Mermaid .mmd files to PNG for the Word report.
 
 Requires Playwright, Chromium and network access for the pinned Mermaid library.
-Install Playwright separately, then run `playwright install chromium`.
+Run `uv run --with playwright python -m playwright install chromium`, then
+`uv run --with playwright python docs/diagrams/render.py`.
 `CHROMIUM_EXECUTABLE_PATH` can select an existing Chromium installation.
 """
 from pathlib import Path

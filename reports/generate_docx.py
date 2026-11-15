@@ -2,7 +2,7 @@ r"""Sinh báo cáo Word theo file định dạng của cô Xuân.
 
 Chạy sau khi đã chạy benchmark:
 
-    python reports/generate_docx.py
+    uv run python reports/generate_docx.py
 
 Dùng báo cáo hiện có làm mẫu để giữ trang đầu và định dạng.
 Có thể cung cấp template khác bằng biến môi trường ``REPORT_TEMPLATE``.
@@ -12,16 +12,17 @@ from __future__ import annotations
 
 import json
 import os
+from copy import deepcopy
 from datetime import date
 from pathlib import Path
 
 import pandas as pd
 from docx import Document
 from docx.enum.table import WD_CELL_VERTICAL_ALIGNMENT
-from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_TAB_ALIGNMENT
 from docx.oxml import OxmlElement, parse_xml
 from docx.oxml.ns import qn
-from docx.shared import Inches, Pt
+from docx.shared import Cm, Inches, Pt
 from latex2mathml.converter import convert as latex_to_mathml
 from mathml2omml import convert as mathml_to_omml
 
@@ -68,6 +69,7 @@ def update_template_front_matter(document: Document) -> None:
     """Đổi chữ mẫu ở các trang đầu nhưng giữ style/layout của template."""
     paragraphs = document.paragraphs
     replacements = {
+        0: "LỜI CAM ĐOAN",
         1: "Tôi cam đoan báo cáo này sử dụng mã nguồn, số liệu và kết quả thực nghiệm được ghi rõ trong project SVM Optimization Lab. Các hình khái niệm là minh họa tự tạo; kết quả thực nghiệm được lấy từ các script benchmark.",
         5: "Tôi trân trọng cảm ơn giảng viên học phần đã cung cấp khung trình bày và định hướng để gắn lý thuyết tối ưu với một bài toán học máy có thể kiểm chứng.",
         10: (
@@ -79,7 +81,12 @@ def update_template_front_matter(document: Document) -> None:
             "Hình 3.2. Một vòng cập nhật SMO\n"
             "Hình 4.1. Kiến trúc mã nguồn\n"
             "Hình 4.2. Pipeline thực nghiệm Banknote\n"
-            "Hình 5.1–5.6. Kết quả benchmark và trực quan hóa"
+            "Hình 5.1. So sánh các metrics\n"
+            "Hình 5.2. Ma trận nhầm lẫn trên tập test\n"
+            "Hình 5.3. F1 theo C và gamma\n"
+            "Hình 5.4. Hội tụ của SMO\n"
+            "Hình 5.5. Ranh giới quyết định 2D\n"
+            "Hình 5.6. Đường ROC trên tập test"
         ),
         14: "Bảng 4.1. Cấu hình benchmark và giao thức đánh giá",
         15: "Bảng 5.1. Metrics của các mô hình trên tập test",
@@ -91,6 +98,7 @@ def update_template_front_matter(document: Document) -> None:
     for index, text in replacements.items():
         if index < len(paragraphs):
             paragraphs[index].text = text
+    paragraphs[10].alignment = WD_ALIGN_PARAGRAPH.LEFT
     if len(paragraphs) > 18:
         paragraphs[16].text = "DANH MỤC CÔNG THỨC"
         paragraphs[16].style = "Heading 1N" if "Heading 1N" in [s.name for s in document.styles] else paragraphs[16].style
@@ -101,6 +109,7 @@ def update_template_front_matter(document: Document) -> None:
             "(4.1) Primal objective của ví dụ giải tay — Chương 4"
         )
         paragraphs[17].style = "Content" if "Content" in [s.name for s in document.styles] else paragraphs[17].style
+        paragraphs[17].alignment = WD_ALIGN_PARAGRAPH.LEFT
 
     # The original template carries a cached TOC for a different report.
     # Replace it with a fresh field so Word can build entries for this report.
@@ -113,6 +122,7 @@ def update_template_front_matter(document: Document) -> None:
             for item in list(content):
                 content.remove(item)
             placeholder = document.add_paragraph()
+            placeholder.alignment = WD_ALIGN_PARAGRAPH.LEFT
             add_field(placeholder, r'TOC \o "1-3" \h \z \u')
             content.append(placeholder._p)
 
@@ -120,6 +130,8 @@ def update_template_front_matter(document: Document) -> None:
 
 def add_heading(document: Document, text: str, level: int) -> None:
     paragraph = document.add_heading(text, level=level)
+    if level == 1 and text.startswith("CHƯƠNG "):
+        paragraph.paragraph_format.page_break_before = True
     # The template's Heading styles already contain numbering; our titles do too.
     num_pr = paragraph._p.get_or_add_pPr().get_or_add_numPr()
     num_pr.get_or_add_numId().val = 0
@@ -217,7 +229,9 @@ def add_bullets(document: Document, items) -> None:
 def add_equation(document: Document, latex: str, number: str) -> None:
     """Chèn công thức LaTeX thành Word OMML, có số công thức bên phải."""
     p = document.add_paragraph()
-    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    p.paragraph_format.tab_stops.add_tab_stop(Cm(8), WD_TAB_ALIGNMENT.CENTER)
+    p.paragraph_format.tab_stops.add_tab_stop(Cm(16), WD_TAB_ALIGNMENT.RIGHT)
+    p.add_run("\t")
     mathml = latex_to_mathml(latex)
     omml = mathml_to_omml(mathml).replace(
         "<m:oMath>",
@@ -225,7 +239,7 @@ def add_equation(document: Document, latex: str, number: str) -> None:
         1,
     )
     p._p.append(parse_xml(omml.encode("utf-8")))
-    p.add_run(f"    {number}").font.name = "Cambria Math"
+    p.add_run(f"\t{number}")
 
 
 def fmt(value, digits=4):
@@ -235,17 +249,88 @@ def fmt(value, digits=4):
 
 
 def configure_styles(document: Document) -> None:
+    for section in document.sections:
+        section.page_width = Cm(21)
+        section.page_height = Cm(29.7)
+        section.left_margin = Cm(3)
+        section.right_margin = Cm(2)
+        section.top_margin = Cm(2.5)
+        section.bottom_margin = Cm(2.5)
+        section.footer_distance = Cm(1.2)
     normal = document.styles["Normal"]
     normal.font.name = "Times New Roman"
     normal.font.size = Pt(13)
     normal._element.rPr.rFonts.set(qn("w:eastAsia"), "Times New Roman")
-    normal.paragraph_format.line_spacing = 1.15
-    normal.paragraph_format.space_after = Pt(6)
-    for name in ("Heading 1", "Heading 2", "Heading 3"):
+    normal.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+    normal.paragraph_format.line_spacing = 1.5
+    normal.paragraph_format.space_after = Pt(8)
+    for name in ("Content", "Caption", "Heading 1", "Heading 2", "Heading 3", "Heading 1N", "CoverB"):
         if name in [style.name for style in document.styles]:
             style = document.styles[name]
             style.font.name = "Times New Roman"
             style._element.rPr.rFonts.set(qn("w:eastAsia"), "Times New Roman")
+            style.font.size = Pt(14 if name == "Heading 1" else 13)
+    for name in ("Content",):
+        style = document.styles[name]
+        style.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+        style.paragraph_format.line_spacing = 1.5
+        style.paragraph_format.space_after = Pt(8)
+    for name in ("Heading 1", "Heading 2", "Heading 3"):
+        style = document.styles[name]
+        style.font.bold = True
+        style.font.italic = name == "Heading 3"
+        style.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.LEFT
+        style.paragraph_format.line_spacing = 1.5
+        style.paragraph_format.space_before = Pt(10 if name == "Heading 1" else 6)
+        style.paragraph_format.space_after = Pt(6)
+    caption = document.styles["Caption"]
+    caption.font.italic = True
+    caption.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    caption.paragraph_format.line_spacing = 1.0
+    caption.paragraph_format.space_after = Pt(8)
+    footer_part = document.sections[0].footer
+    for child in list(footer_part._element):
+        footer_part._element.remove(child)
+    footer = footer_part.add_paragraph()
+    footer.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    page = OxmlElement("w:fldSimple")
+    page.set(qn("w:instr"), "PAGE")
+    footer._p.append(page)
+
+
+def add_cover(document: Document) -> None:
+    """Bìa trung tính theo mẫu; không suy đoán thông tin sinh viên hay giảng viên."""
+    for paragraph in document.paragraphs:
+        if paragraph._p.xpath('.//w:bookmarkStart[@w:name="svm_report_cover"]'):
+            paragraph._p.getparent().remove(paragraph._p)
+            break
+    paragraph = document.add_paragraph()
+    paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    paragraph.paragraph_format.line_spacing = 1.0
+    bookmark = OxmlElement("w:bookmarkStart")
+    bookmark.set(qn("w:id"), "32000")
+    bookmark.set(qn("w:name"), "svm_report_cover")
+    paragraph._p.insert(0, bookmark)
+    first = paragraph.add_run("BÁO CÁO MÔN TỐI ƯU HÓA\n\n\n\n\n\n")
+    first.bold, first.font.size = True, Pt(14)
+    title = paragraph.add_run("NGHIÊN CỨU SVM DƯỚI GÓC NHÌN TỐI ƯU HÓA")
+    title.bold, title.font.size = True, Pt(16)
+    details = paragraph.add_run("\n\n\n\n\n\n\nSinh viên: ................................................\n\nGiảng viên hướng dẫn: ................................................")
+    details.font.size = Pt(13)
+    bookmark_end = OxmlElement("w:bookmarkEnd")
+    bookmark_end.set(qn("w:id"), "32000")
+    paragraph._p.append(bookmark_end)
+    cover_section = deepcopy(document.sections[0]._sectPr)
+    for child in list(cover_section):
+        if child.tag in {qn("w:headerReference"), qn("w:footerReference"), qn("w:pgNumType")}:
+            cover_section.remove(child)
+    section_type = cover_section.find(qn("w:type"))
+    if section_type is None:
+        section_type = OxmlElement("w:type")
+        cover_section.insert(0, section_type)
+    section_type.set(qn("w:val"), "nextPage")
+    paragraph._p.get_or_add_pPr().append(cover_section)
+    document._element.body.insert(0, paragraph._p)
 
 
 def main() -> None:
@@ -253,14 +338,21 @@ def main() -> None:
         raise FileNotFoundError(f"Không tìm thấy template: {TEMPLATE}")
     metrics_path = DATA / "model_metrics.csv"
     if not metrics_path.exists():
-        raise FileNotFoundError("Chưa có benchmark. Chạy: python -m experiments.06_report_benchmark")
+        raise FileNotFoundError("Chưa có benchmark. Chạy: uv run python -m experiments.06_report_benchmark")
     metrics = pd.read_csv(metrics_path)
     summary = json.loads((DATA / "dataset_summary.json").read_text(encoding="utf-8"))
     artifacts = json.loads((ROOT / "reports" / "benchmark_artifacts.json").read_text(encoding="utf-8"))
 
     document = Document(str(TEMPLATE))
+    # Remove a generated cover before indexing the existing front matter on reruns.
+    for paragraph in document.paragraphs:
+        if paragraph._p.xpath('.//w:bookmarkStart[@w:name="svm_report_cover"]'):
+            paragraph._p.getparent().remove(paragraph._p)
+            break
     trim_after_template_front_matter(document)
     update_template_front_matter(document)
+    configure_styles(document)
+    add_cover(document)
     document.core_properties.title = "Nghiên cứu SVM dưới góc nhìn tối ưu hóa"
     document.core_properties.subject = "Primal, Dual, KKT, SMO và benchmark Banknote Authentication"
     document.core_properties.author = "Nhóm thực hiện"
@@ -281,8 +373,8 @@ def main() -> None:
     add_heading(document, "2.2. Hard margin và Soft margin", level=2)
     document.add_paragraph("Hard-margin SVM giả định dữ liệu phân tách tuyến tính hoàn toàn. Với dữ liệu nhiễu, biến slack ξ_i cho phép một số ràng buộc bị vi phạm và tham số C điều chỉnh mức phạt cho vi phạm đó.")
     add_equation(document, r"\min_{w,b,\xi}\;\frac{1}{2}\|w\|^2+C\sum_{i=1}^{n}\xi_i", "(2.1)")
-    add_figure(document, ILLUSTRATIONS / "soft_margin.png", "Hình 2.2. Soft margin và slack trên dữ liệu minh họa.", width=5.5)
-    add_figure(document, ILLUSTRATIONS / "hinge_loss.png", "Hình 2.3. Hinge loss theo margin y f(x).", width=5.5)
+    add_figure(document, ILLUSTRATIONS / "soft_margin.png", "Hình 2.2. Soft margin và slack trên dữ liệu minh họa.", width=4.6)
+    add_figure(document, ILLUSTRATIONS / "hinge_loss.png", "Hình 2.3. Hinge loss theo margin y f(x).", width=4.6)
     document.add_paragraph("C lớn ưu tiên giảm lỗi huấn luyện; C nhỏ ưu tiên margin rộng hơn. Dạng không ràng buộc tương đương liên hệ trực tiếp với hinge loss max(0, 1−y_i f(x_i)).")
     add_heading(document, "2.3. Lagrangian, Dual và KKT", level=2)
     document.add_paragraph("Đưa các ràng buộc vào Lagrangian với các multiplier α_i và μ_i, sau đó đặt các đạo hàm riêng theo w, b và ξ bằng 0. Kết quả là bài toán Dual chỉ còn phụ thuộc vào tích vô hướng x_iᵀx_j, mở đường cho kernel.")
@@ -385,10 +477,11 @@ def main() -> None:
         p.add_run(f"{index}. {ref}")
 
     add_heading(document, "PHỤ LỤC. CÁCH TÁI LẬP KẾT QUẢ", level=1)
-    document.add_paragraph("Từ thư mục gốc project, cài requirements rồi chạy:")
+    document.add_paragraph("Từ thư mục gốc project, chạy uv sync --locked rồi chạy:")
     p = document.add_paragraph()
     p.style = "No Spacing" if "No Spacing" in [s.name for s in document.styles] else "Content"
-    p.add_run("python -m pytest -q\npython -m experiments.02_hand_example\npython -m experiments.06_report_benchmark\npython reports/generate_docx.py").font.name = "Consolas"
+    p.alignment = WD_ALIGN_PARAGRAPH.LEFT
+    p.add_run("uv run pytest -q\nuv run python -m experiments.02_hand_example\nuv run python -m experiments.06_report_benchmark\nuv run python reports/generate_docx.py").font.name = "Consolas"
     document.add_paragraph("Các file số liệu nằm trong reports/data/, biểu đồ trong reports/figures/ và bản báo cáo cuối cùng tại reports/svm_optimization_report.docx.")
 
     # Remove orphaned image relationships left by rebuilding from an earlier report.

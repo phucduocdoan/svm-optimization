@@ -104,7 +104,7 @@ Vậy `P=D=0.25`, duality gap bằng 0 trong nghiệm giải tích này.
 ## 6. Chạy code đối chiếu
 
 ```bash
-python -m experiments.02_hand_example
+uv run python -m experiments.02_hand_example
 ```
 
 File sẽ in nghiệm giải tích và nghiệm do SMO tự tìm. Sai khác rất nhỏ là bình thường do tolerance và sai số số học.

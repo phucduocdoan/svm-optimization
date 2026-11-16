@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 from copy import deepcopy
 from pathlib import Path
 
@@ -28,7 +29,8 @@ from mathml2omml import convert as mathml_to_omml
 
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / "reports" / "svm_optimization_report.docx"
-TEMPLATE = Path(os.environ.get("REPORT_TEMPLATE", ROOT / "reports" / "report_base.docx"))
+TEMPLATE = Path(os.environ.get("REPORT_TEMPLATE", ROOT / "reports" / "report_layout.docx"))
+CONTENT = ROOT / "reports" / "report_content.json"
 DATA = ROOT / "reports" / "data"
 FIGURES = ROOT / "reports" / "figures"
 ILLUSTRATIONS = ROOT / "docs" / "images" / "scientific"
@@ -109,6 +111,44 @@ def add_equation(document: Document, latex: str, number: str) -> None:
     p._p.append(parse_xml(omml.encode("utf-8")))
     if number:
         p.add_run(f"\t{number}")
+
+
+INLINE_MATH = re.compile(
+    r"x_i\^T|w\^T|x_i|y_i|alpha_i|xi_i|phi\(x_i\)|phi\(x\)|"
+    r"K\(x_i, x_j\)|gamma|L_hinge|\|\|w\|\||\|\|x_i - x_j\|\|"
+)
+
+
+def format_inline_math(document: Document) -> None:
+    """Render common SVM variables as native Word math without changing prose."""
+    for paragraph in list(document.paragraphs):
+        source = paragraph.text
+        matches = list(INLINE_MATH.finditer(source))
+        if not matches:
+            continue
+        p = paragraph._p
+        for child in list(p):
+            if child.tag != qn("w:pPr"):
+                p.remove(child)
+        cursor = 0
+        for match in matches:
+            if match.start() > cursor:
+                paragraph.add_run(source[cursor:match.start()])
+            token = match.group()
+            latex = {
+                "x_i^T": r"x_i^T", "w^T": r"w^T", "x_i": r"x_i", "y_i": r"y_i",
+                "alpha_i": r"\alpha_i", "xi_i": r"\xi_i", "phi(x_i)": r"\phi(x_i)",
+                "phi(x)": r"\phi(x)", "K(x_i, x_j)": r"K(x_i,x_j)", "gamma": r"\gamma",
+                "L_hinge": r"L_{\mathrm{hinge}}", "||w||": r"\|w\|", "||x_i - x_j||": r"\|x_i-x_j\|",
+            }[token]
+            mathml = latex_to_mathml(latex)
+            omml = mathml_to_omml(mathml).replace(
+                "<m:oMath>", '<m:oMath xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math">', 1
+            )
+            p.append(parse_xml(omml.encode("utf-8")))
+            cursor = match.end()
+        if cursor < len(source):
+            paragraph.add_run(source[cursor:])
 
 
 def fmt(value, digits=4):
@@ -220,6 +260,16 @@ def insert_before(document: Document, anchor, build) -> None:
             anchor._p.addprevious(element)
 
 
+def merge_base_content(document: Document) -> None:
+    """Restore the chapter body from its editable content source into the layout."""
+    if not CONTENT.exists():
+        raise FileNotFoundError(f"Thiếu nội dung báo cáo: {CONTENT}")
+    anchor = find_paragraph(document, "KẾT LUẬN VÀ KIẾN NGHỊ")
+    records = json.loads(CONTENT.read_text(encoding="utf-8"))
+    for record in records:
+        anchor._p.addprevious(parse_xml(record["xml"].encode("utf-8")))
+
+
 def refresh_toc(document: Document) -> None:
     # Trường TOC trong file nhóm có cache từ một đề án khác; làm mới field,
     # giữ nguyên các chương và các đoạn nội dung của nhóm.
@@ -276,6 +326,7 @@ def main() -> None:
     summary = json.loads((DATA / "dataset_summary.json").read_text(encoding="utf-8"))
     artifacts = json.loads((ROOT / "reports" / "benchmark_artifacts.json").read_text(encoding="utf-8"))
     document = Document(str(TEMPLATE))
+    merge_base_content(document)
     configure_styles(document)
     refresh_toc(document)
     add_cover(document)
@@ -292,14 +343,14 @@ def main() -> None:
 
     def soft_margin():
         document.add_paragraph("Trong code, hàm quyết định dùng quy ước wᵀx+b; quy ước này tương đương wᵀx−b trong bản nền khi đổi dấu bias. Hàm mục tiêu soft margin được viết:")
-        add_equation(document, r"\min_{w,b,\xi}\;\frac{1}{2}\|w\|^2+C\sum_i\xi_i", "")
+        add_equation(document, r"\min_{w,b,\xi}\;\frac{1}{2}\|w\|^2+C\sum_i\xi_i", "(2.4)")
         add_figure(document, ILLUSTRATIONS / "soft_margin.png", "Hình 2.2. Một điểm vi phạm biên với slack dương; dữ liệu tổng hợp.", width=4.6)
         add_figure(document, ILLUSTRATIONS / "hinge_loss.png", "Hình 2.3. Hinge loss theo margin có dấu.", width=4.6)
     insert_before(document, find_paragraph(document, "Phương pháp nhân tử Lagrange và bài toán đối ngẫu"), soft_margin)
 
     def kernel():
         document.add_paragraph("Hình sau so sánh Linear và RBF trên cùng dữ liệu XOR tổng hợp; đây là hình minh họa trên train, không phải kết quả Banknote.")
-        add_equation(document, r"K_{\mathrm{RBF}}(x,z)=\exp(-\gamma\|x-z\|^2)", "")
+        add_equation(document, r"K_{\mathrm{RBF}}(x,z)=\exp(-\gamma\|x-z\|^2)", "(3.1)")
         add_figure(document, ILLUSTRATIONS / "linear_rbf_xor.png", "Hình 3.1. Linear và RBF trên dữ liệu XOR tổng hợp.", width=6.0)
     insert_before(document, find_paragraph(document, "Mở rộng SVM cho bài toán phân lớp đa lớp và hồi quy (SVR)"), kernel)
 
@@ -311,7 +362,7 @@ def main() -> None:
     def setup():
         document.add_paragraph(f"Thực nghiệm bổ sung dùng UCI Banknote Authentication: {summary['n_samples']} mẫu, {summary['n_features']} đặc trưng, train/test {summary['train_samples']}/{summary['test_samples']}, chia phân tầng với random_state={summary['random_state']}. StandardScaler chỉ fit trên train; trong cross-validation, scaler được fit lại trên train của từng fold.")
         document.add_paragraph("SMO cập nhật hai hệ số alpha mỗi lần để giữ ràng buộc của bài toán dual:")
-        add_equation(document, r"\sum_i\alpha_i y_i=0,\qquad 0\leq\alpha_i\leq C", "")
+        add_equation(document, r"\sum_i\alpha_i y_i=0,\qquad 0\leq\alpha_i\leq C", "(4.1)")
         add_figure(document, DIAGRAMS / "architecture.png", "Hình 4.1. Kiến trúc module của project.", width=6.0)
         add_figure(document, DIAGRAMS / "experiment_pipeline.png", "Hình 4.2. Pipeline thực nghiệm Banknote.", width=6.0)
         add_figure(document, DIAGRAMS / "smo_pair_update.png", "Hình 4.3. Một vòng cập nhật cặp SMO.", width=6.0)
@@ -342,6 +393,7 @@ def main() -> None:
     insert_before(document, find_paragraph(document, "PHỤ LỤC"), references)
 
     document.add_paragraph("Tái lập kết quả: chạy uv sync --locked, uv run python -m experiments.06_report_benchmark và uv run python reports/generate_docx.py từ thư mục gốc project.")
+    format_inline_math(document)
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)
     document.save(str(OUTPUT))
     print(f"Saved: {OUTPUT}")

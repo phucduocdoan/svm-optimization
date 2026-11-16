@@ -128,10 +128,11 @@ uv run pytest -q
 
 ### Tạo lại báo cáo Word
 
-Bản nền của nhóm nằm tại `reports/report_base.docx`. Chương trình giữ nội dung các chương trong bản nền, chèn hình và kết quả thực nghiệm vào các mục tương ứng, rồi xuất `reports/svm_optimization_report.docx`. File nền không bị thay đổi.
+Nguồn báo cáo được tách thành `reports/report_layout.docx` (layout Word) và `reports/report_content.json` (các đoạn nội dung cùng định dạng gốc); bản text dễ đọc nằm ở `reports/report_content.md`. `reports/report_base.docx` được giữ nguyên làm bản lưu đối chiếu. Generator ghép layout và nội dung trước khi chèn hình, kết quả và công thức.
 
 ```bash
 uv run python -m experiments.06_report_benchmark
+uv run python reports/check_math.py
 uv run python reports/generate_docx.py
 ```
 

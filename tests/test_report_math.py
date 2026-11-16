@@ -3,7 +3,7 @@ import pytest
 from docx import Document
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
-from report_math import find_math, render_math, to_latex
+from report_math import find_math, omml, render_math, to_latex
 
 PROSE = [
     "phi tuyến", "chi phí", "xi măng", "k-Fold", "5-fold", "F1-Score", "COVID-19", "C-SVM", "one-vs-one",
@@ -79,6 +79,19 @@ def test_inline_fraction_is_linear_display_fraction_is_stacked():
                  for p in document.paragraphs}
     assert fractions["\t\t(1.1)"] == [False]
     assert [linear for linear in fractions.values() if linear == [True]] == [[True]]
+
+
+def test_sum_without_upper_limit_hides_empty_slot():
+    body = OxmlElement("w:body")
+    for latex in (r"\sum_i \alpha_i y_i", r"\sum_{i=1}^{n} \xi_i"):
+        body.append(omml(latex))
+    assert check_math.check_placeholders(body) == []
+    hides = [[flag.tag[len(check_math.M):] for flag in nary.find(f"{check_math.M}naryPr")
+              if flag.tag.endswith("Hide")] for nary in body.iter(f"{check_math.M}nary")]
+    assert hides == [["supHide"], []]
+    for flag in body.iter(f"{check_math.M}supHide"):
+        flag.getparent().remove(flag)
+    assert len(check_math.check_placeholders(body)) == 1
 
 
 def test_checker_catches_leftover_math_wrong_number_and_lost_content():

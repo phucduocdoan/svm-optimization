@@ -454,7 +454,16 @@ def omml(latex: str, inline: bool = False):
     xml = mathml_to_omml(latex_to_mathml(latex))
     if inline:  # phân số trong dòng viết dạng a/b, không xếp chồng làm giãn dòng
         xml = xml.replace("<m:f>", '<m:f><m:fPr><m:type m:val="lin"/></m:fPr>')
-    return parse_xml(xml.replace("<m:oMath>", f'<m:oMath xmlns:m="{OMML_NS}">', 1).encode("utf-8"))
+    math = parse_xml(xml.replace("<m:oMath>", f'<m:oMath xmlns:m="{OMML_NS}">', 1).encode("utf-8"))
+    for nary in math.iter(qn("m:nary")):  # \sum_i không có cận trên: ẩn ô rỗng, Word mới không vẽ ô vuông
+        props = nary.find(qn("m:naryPr"))
+        for slot in ("sub", "sup"):
+            if not "".join(nary.find(qn(f"m:{slot}")).itertext()).strip():
+                hide = OxmlElement(f"m:{slot}Hide")
+                hide.set(qn("m:val"), "1")
+                ctrl = props.find(qn("m:ctrlPr"))
+                ctrl.addprevious(hide) if ctrl is not None else props.append(hide)
+    return math
 
 
 def _block(text: str, spans: list[MathSpan]) -> tuple[Display | None, int]:

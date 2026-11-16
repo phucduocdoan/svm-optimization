@@ -26,9 +26,7 @@ $$
 
 nên $x=\lambda/2$ và $y=\lambda/4$. Thay vào ràng buộc $x+y=3$: $\lambda/2+\lambda/4=3$, suy ra $\lambda=4$, do đó $x=2$, $y=1$ và giá trị nhỏ nhất của mục tiêu là $2^2+2\times1^2=6$.
 
-Chạy lại bằng `scipy.optimize.minimize` với ràng buộc đẳng thức `x+y=3` cho cùng kết quả $x=2,\ y=1$, mục tiêu $\approx6$, khớp với lời giải tay. Cơ chế vừa dùng — đưa ràng buộc vào hàm mục tiêu qua một nhân tử rồi cho đạo hàm bằng 0 — chính là cách phần dưới sẽ lặp lại với SVM, chỉ khác là có nhiều biến hơn và các ràng buộc là bất đẳng thức nên nhân tử ($\alpha_i,\mu_i$) phải không âm.
-
-*Ý tưởng minh họa tham khảo từ Phạm Đình Khanh, Machine Learning Algorithms to Practice, ch. 7 SVM: [phamdinhkhanh.github.io/deepai-book/ch_ml/SVM.html](https://phamdinhkhanh.github.io/deepai-book/ch_ml/SVM.html).*
+Chạy lại bằng `scipy.optimize.minimize` với ràng buộc đẳng thức `x+y=3` cho cùng kết quả $x=2,\ y=1$, mục tiêu $\approx6$, khớp với lời giải tay. Cơ chế vừa dùng — đưa ràng buộc vào hàm mục tiêu qua một nhân tử rồi cho đạo hàm bằng 0 — chính là cách phần dưới sẽ lặp lại với SVM, chỉ khác là có nhiều biến hơn và các ràng buộc là bất đẳng thức nên nhân tử ($\alpha_i,\mu_i$) phải không âm [[5]](10_image_credits.md#ref-5).
 
 ## 1. Nhắc lại Primal
 

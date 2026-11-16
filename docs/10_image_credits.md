@@ -21,6 +21,12 @@ Các biểu đồ kết quả trong `reports/figures/` được sinh từ thí n
 
 - Banknote Authentication: [UCI Machine Learning Repository](https://archive.ics.uci.edu/dataset/267/banknote+authentication), Volker Lohweg (2012), DOI [10.24432/C55P57](https://doi.org/10.24432/C55P57), giấy phép CC BY 4.0.
 
-## Tài liệu tham khảo bổ sung
+## Tài liệu tham khảo
 
-- Phạm Đình Khanh, *Machine Learning Algorithms to Practice*, chương 7 "Support Vector Machine", <https://phamdinhkhanh.github.io/deepai-book/ch_ml/SVM.html> (truy cập 2026-11-16). Tham khảo ý tưởng giải thích cho phần trực giác "công bằng" của biên và việc có nhiều ranh giới ứng viên với margin khác nhau ([01](01_svm_geometry.md)); ba trường hợp của $\xi_i$, việc một outlier có thể kéo nghiêng hard margin, và so sánh hinge loss với logistic loss theo margin có dấu ([02](02_primal_soft_margin.md)); ví dụ QP nhỏ với nhân tử Lagrange ([03](03_lagrange_dual.md)); kernel đa thức bậc 2 qua ánh xạ đặc trưng tường minh, trực giác landmark của RBF minh họa thêm bằng ví dụ 1D, và so sánh nhiều kernel bằng cross-validation ([06](06_kernel.md)). Nội dung, dữ liệu tổng hợp và mã nguồn vẽ hình đều do nhóm tự viết lại; không sao chép văn bản, số liệu hay hình ảnh từ sách.
+Các trích dẫn [n] trong docs trỏ tới danh sách này.
+
+1. <a id="ref-1"></a>Cortes, C. & Vapnik, V. (1995). Support-Vector Networks. *Machine Learning*, 20, 273–297.
+2. <a id="ref-2"></a>Platt, J. (1998). Sequential Minimal Optimization: A Fast Algorithm for Training Support Vector Machines. MSR-TR-98-14.
+3. <a id="ref-3"></a>Chang, C.-C. & Lin, C.-J. (2011). LIBSVM: A Library for Support Vector Machines.
+4. <a id="ref-4"></a>UCI Banknote Authentication: <https://archive.ics.uci.edu/dataset/267/banknote+authentication>
+5. <a id="ref-5"></a>Phạm Đình Khanh. *Machine Learning Algorithms to Practice*, chương 7 "Support Vector Machine". <https://phamdinhkhanh.github.io/deepai-book/ch_ml/SVM.html> (truy cập 2026-11-16). Chỉ tham khảo ý tưởng giải thích; văn bản, dữ liệu tổng hợp, hình và code trong docs do nhóm tự viết.

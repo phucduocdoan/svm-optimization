@@ -175,6 +175,22 @@ ax.set(xlim=(-2.2,2.5), ylim=(-.08,3.3), xlabel='Margin có dấu  $z=y f(x)$',
 ax.legend(loc='upper right', fontsize=11)
 save(fig, 'logistic_vs_hinge')
 
+# --- Loss theo tung lop (docs/02): truc hoanh la diem so f(x), khong phai margin co dau. ---
+f_lc = np.linspace(-3, 3, 400)
+fig, axes = plt.subplots(1, 2, figsize=(11.5, 4.6), sharey=True)
+for ax, y_lc in zip(axes, [1, -1]):
+    ax.plot(f_lc, np.maximum(0, 1-y_lc*f_lc), color=BLUE, lw=2.5, label='Hinge')
+    ax.plot(f_lc, np.log1p(np.exp(-y_lc*f_lc))/np.log(2), color=RED, lw=2.5, ls='--',
+            label='Logistic đã co giãn')
+    ax.axvline(y_lc, color=GRAY, ls='--', lw=1)
+    ax.set(xlim=(-3,3), ylim=(-.08,4.2), xlabel='Điểm số  $f(x)$',
+           title=f'Mẫu có nhãn $y={y_lc:+d}$')
+    ax.set_xticks([-3,-2,-1,0,1,2,3])
+axes[0].set_ylabel('Loss')
+axes[0].legend(loc='upper right', fontsize=11)
+assert np.maximum(0, 1-1*1.5) == 0 and np.maximum(0, 1+(-1.5)) == 0
+save(fig, 'loss_per_class')
+
 fig, ax = plt.subplots(figsize=(7,5))
 z = np.linspace(-1.2,2.5,400)
 loss = np.maximum(0,1-z)
@@ -188,6 +204,32 @@ ax.set(xlim=(-1.2,2.5), ylim=(-.08,2.35), xlabel='Margin có dấu  $z=y f(x)$',
        ylabel='Hinge loss  $\\max(0,1-z)$',title='Hinge loss')
 ax.set_xticks([-1,0,1,2]); ax.set_yticks([0,1,2])
 save(fig, 'hinge_loss')
+
+# --- Ba truong hop cua xi (docs/02): f(x)=x1+x2, dung ba vi du so cua docs/02 muc 4. ---
+# Doan noi tu diem den bien cua lop no co do dai xi/||w||, voi ||w||=sqrt(2).
+cases = [  # (diem, nhan, ten)
+    (np.array([.1, .5]), 1, 'A'),
+    (np.array([-.9, -.5]), -1, 'B'),
+    (np.array([-.6, .4]), 1, 'C'),
+]
+fig, ax = plt.subplots(figsize=(8, 6))
+boundary(ax)
+for point, y_c, name in cases:
+    xi = max(0, 1 - y_c*point.sum())
+    color, marker = (RED, '^') if y_c == 1 else (BLUE, 'o')
+    ax.scatter(*point, c=color, marker=marker, s=120, edgecolors=INK, linewidths=1.2, zorder=6,
+               label=f'{name}: $y={y_c:+d}$, $f(x)={point.sum():.1f}$, $\\xi={xi:.1f}$')
+    ax.text(point[0]-.12, point[1]+.12, name, fontsize=14, ha='right', va='bottom', weight='bold')
+    if xi > 0:  # chieu vuong goc len bien f(x)=y cua lop minh
+        target = point + (y_c - point.sum())/2
+        assert np.isclose(target.sum(), y_c)
+        ax.plot(*np.column_stack([point, target]), color=color, lw=2.5, zorder=5)
+assert [round(max(0, 1-y_c*p.sum()), 6) for p, y_c, _ in cases] == [.4, 0, 1.2]
+ax.set(xlim=(-2.6,2.6), ylim=(-2.5,2.5), xlabel='$x_1$', ylabel='$x_2$')
+ax.set_aspect('equal')
+ax.legend(loc='upper left', bbox_to_anchor=(1.01,1), fontsize=11)
+ax.set_title('Ba trường hợp của biến bù $\\xi$')
+save(fig, 'slack_cases')
 
 # Deterministic XOR clusters with the same samples and training C in both panels.
 rng = np.random.default_rng(42)
@@ -251,6 +293,17 @@ ax2.set_aspect('equal')
 ax2.legend(loc='upper right', fontsize=9.5)
 save(fig, 'rbf_landmarks')
 
+# --- RBF theo khoang cach voi vai gamma (docs/06): exp(-gamma d^2). ---
+d_rg = np.linspace(0, 3, 300)
+fig, ax = plt.subplots(figsize=(7, 4.6))
+for g, color, ls in [(.1, GRAY, ':'), (1, BLUE, '-'), (10, RED, '--')]:
+    ax.plot(d_rg, np.exp(-g*d_rg**2), color=color, lw=2.5, ls=ls, label=f'$\\gamma={g}$')
+assert np.isclose(np.exp(-1*1**2), .3679, atol=1e-4) and np.exp(-10*1**2) < 1e-4
+ax.set(xlim=(0,3), ylim=(0,1.05), xlabel='Khoảng cách  $\\|x-z\\|$',
+       ylabel='$K(x,z)$', title='Kernel RBF theo khoảng cách')
+ax.legend(loc='upper right', fontsize=11)
+save(fig, 'rbf_gamma_profile')
+
 # --- Kernel comparison tren make_moons (docs/06): CV accuracy boxplot cho 4 kernel. ---
 Xm, ym = make_moons(n_samples=200, noise=.25, random_state=0)
 cv_moons = RepeatedStratifiedKFold(n_splits=5, n_repeats=10, random_state=0)
@@ -304,8 +357,8 @@ ax.annotate('$\\alpha_i=C$\n$y_if(x_i)\\leq1,\\ \\xi_i\\geq0$\ntrong biên / sai
 ax.annotate('$\\alpha_1=\\alpha_2=0.25$', xy=(alpha_free, 0), xytext=(alpha_free, -1.0),
             fontsize=10, ha='center', color=INK,
             arrowprops={'arrowstyle': '->', 'color': INK})
-ax.annotate('$\\alpha_3=\\alpha_4=0$', xy=(0, 0), xytext=(0.17, -1.5),
-            fontsize=10, ha='left', color=GRAY,
+ax.annotate('$\\alpha_3=\\alpha_4=0$', xy=(0, 0), xytext=(-0.2, -1.0),
+            fontsize=10, ha='center', color=GRAY,
             arrowprops={'arrowstyle': '->', 'color': GRAY})
 ax.text(0, -0.45, '0', fontsize=12, ha='center', color=INK)
 ax.text(C_kkt, -0.45, '$C$', fontsize=12, ha='center', color=INK)
@@ -424,4 +477,4 @@ ax.legend(loc='upper left', bbox_to_anchor=(1.01, 1), fontsize=11)
 ax.set_title('Ví dụ giải tay: 4 điểm, w, b và hai biên')
 save(fig, 'hand_example')
 
-print(f'Saved 12 figures in {OUT}; XOR training accuracy: linear={linear.score(X,y):.3f}, RBF={rbf.score(X,y):.3f}')
+print(f'Saved 15 figures in {OUT}; XOR training accuracy: linear={linear.score(X,y):.3f}, RBF={rbf.score(X,y):.3f}')

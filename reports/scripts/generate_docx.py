@@ -242,13 +242,13 @@ def find_paragraph(document: Document, text: str):
 
 
 def insert_before(document: Document, anchor, build) -> None:
-    """Chuyển các phần mới tạo đến trước mốc mà không xóa phần nền."""
+    """Chuyển các phần mới tạo đến trước phần tử mốc mà không xóa phần nền."""
     body = document._element.body
     existing = set(body)
     build()
     for element in list(body):
         if element not in existing and element.tag != qn("w:sectPr"):
-            anchor._p.addprevious(element)
+            anchor.addprevious(element)
 
 
 def merge_base_content(document: Document) -> None:
@@ -299,17 +299,19 @@ def add_markdown(document: Document, text: str, base: Path) -> None:
         if image:
             add_figure(document, (base / image.group(1)).resolve(), width=float(image.group(2) or 6.0))
         elif block and block[0].startswith("|"):
-            rows = [[cell.strip() for cell in line.strip("|").split("|")] for line in block]
+            # "\|" trong ô là chuẩn LaTeX, không phải ranh giới cột.
+            rows = [[cell.strip() for cell in re.split(r"(?<!\\)\|", line.strip("|"))] for line in block]
             add_table(document, rows[0], rows[2:])
         elif block:
             add_text(document, " ".join(block))
 
 
 def insert_additions(document: Document) -> None:
-    """Mỗi mục `## Trước: <tiêu đề>` của report_additions.md được chèn ngay trước tiêu đề đó."""
-    sections = re.split(r"^## Trước: (.+)$", ADDITIONS.read_text(encoding="utf-8"), flags=re.MULTILINE)
-    for anchor, text in zip(sections[1::2], sections[2::2]):
-        insert_before(document, find_paragraph(document, anchor.strip()), lambda text=text: add_markdown(document, text, ADDITIONS.parent))
+    """Mỗi mục `## Trước: <tiêu đề>` / `## Sau: <tiêu đề>` của report_additions.md được chèn ngay trước / sau tiêu đề đó."""
+    sections = re.split(r"^## (Trước|Sau): (.+)$", ADDITIONS.read_text(encoding="utf-8"), flags=re.MULTILINE)
+    for where, heading, text in zip(sections[1::3], sections[2::3], sections[3::3]):
+        anchor = find_paragraph(document, heading.strip())._p
+        insert_before(document, anchor if where == "Trước" else anchor.getnext(), lambda text=text: add_markdown(document, text, ADDITIONS.parent))
 
 
 def number_captions(document: Document) -> None:
@@ -354,6 +356,62 @@ def number_captions(document: Document) -> None:
             depth = 0
 
 
+def left_align_back_matter(document: Document) -> None:
+    """URL và lệnh dài không ngắt được: căn đều sẽ giãn chữ, nên phần sau TÀI LIỆU THAM KHẢO căn trái."""
+    paragraphs = document.paragraphs
+    start = next(i for i, p in enumerate(paragraphs) if p.text.strip() == "TÀI LIỆU THAM KHẢO")
+    for paragraph in paragraphs[start + 1:]:
+        if not paragraph.style.name.startswith("Heading"):
+            paragraph.alignment = WD_ALIGN_PARAGRAPH.LEFT
+
+
+CITATION = re.compile(r"\[(\d+)\]")
+
+
+def link_citations(document: Document) -> None:
+    """Đoạn "[n] …" dưới TÀI LIỆU THAM KHẢO nhận bookmark ref_n; mỗi "[n]" trong văn bản phía trên trỏ tới đó."""
+    paragraphs = document.paragraphs
+    start = next(i for i, p in enumerate(paragraphs) if p.text.strip() == "TÀI LIỆU THAM KHẢO")
+    refs = set()
+    for paragraph in paragraphs[start + 1:]:
+        if paragraph.style.name.startswith("Heading"):
+            break
+        match = CITATION.match(paragraph.text)
+        if match:
+            number = match.group(1)
+            start_mark, end_mark = OxmlElement("w:bookmarkStart"), OxmlElement("w:bookmarkEnd")
+            for mark in (start_mark, end_mark):
+                mark.set(qn("w:id"), str(32001 + int(number)))
+            start_mark.set(qn("w:name"), f"ref_{number}")
+            paragraph._p.get_or_add_pPr().addnext(start_mark)
+            paragraph._p.append(end_mark)
+            refs.add(number)
+    for paragraph in paragraphs[:start]:
+        if paragraph.style.name == CODE_STYLE:
+            continue
+        for run in paragraph._p.findall(qn("w:r")):
+            texts = run.findall(qn("w:t"))
+            fonts = run.find(f"{qn('w:rPr')}/{qn('w:rFonts')}")
+            if len(texts) != 1 or (fonts is not None and fonts.get(qn("w:ascii")) == CODE_FONT):
+                continue
+            parts = CITATION.split(texts[0].text or "")
+            if not any(number in refs for number in parts[1::2]):
+                continue
+            for index, part in enumerate(parts):
+                if not part:
+                    continue
+                piece = deepcopy(run)
+                piece.find(qn("w:t")).text = f"[{part}]" if index % 2 else part
+                piece.find(qn("w:t")).set(qn("xml:space"), "preserve")
+                if index % 2 and part in refs:
+                    link = OxmlElement("w:hyperlink")
+                    link.set(qn("w:anchor"), f"ref_{part}")
+                    link.append(piece)
+                    piece = link
+                run.addprevious(piece)
+            run.getparent().remove(run)
+
+
 def refresh_toc(document: Document) -> None:
     # Trường TOC trong file nhóm có cache từ một đề án khác; làm mới field,
     # giữ nguyên các chương và các đoạn nội dung của nhóm.
@@ -394,7 +452,7 @@ def main() -> None:
     # Nội dung phụ thuộc dữ liệu benchmark; nội dung tĩnh nằm trong source/report_additions.md.
     def setup():
         document.add_paragraph(f"Thực nghiệm bổ sung dùng UCI Banknote Authentication: {summary['n_samples']} mẫu, {summary['n_features']} đặc trưng; tập train có {summary['train_samples']} mẫu và tập test có {summary['test_samples']} mẫu, chia phân tầng với `random_state={summary['random_state']}`. StandardScaler chỉ fit trên train; trong cross-validation, scaler được fit lại trên train của từng fold.")
-    insert_before(document, find_paragraph(document, "Kết quả thực nghiệm và so sánh đánh giá"), setup)
+    insert_before(document, find_paragraph(document, "Kết quả thực nghiệm và so sánh đánh giá")._p, setup)
 
     def results():
         best = artifacts["best_rbf_params"]
@@ -408,12 +466,14 @@ def main() -> None:
         add_figure(document, FIGURES / "custom_smo_convergence.png", width=5.8)
         add_figure(document, FIGURES / "decision_boundaries_2d.png", width=6.0)
         add_figure(document, FIGURES / "benchmark_roc.png", width=5.8)
-    insert_before(document, find_paragraph(document, "Kết luận Chương 4"), results)
+    insert_before(document, find_paragraph(document, "Kết luận Chương 4")._p, results)
 
     insert_additions(document)
     number_captions(document)
     document.add_paragraph("Tái lập kết quả: chạy `uv sync --locked`, `uv run python -m experiments.06_report_benchmark` và `uv run python reports/scripts/generate_docx.py` từ thư mục gốc project.")
     render_math(document)
+    link_citations(document)
+    left_align_back_matter(document)
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)
     document.save(str(OUTPUT))
     print(f"Saved: {OUTPUT}")

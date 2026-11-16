@@ -34,7 +34,7 @@ def test_insert_before_preserves_existing_content_and_order():
         document.add_paragraph("Hình bổ sung")
         document.add_paragraph("Giải thích bổ sung")
 
-    report.insert_before(document, anchor, append_new)
+    report.insert_before(document, anchor._p, append_new)
     assert [p.text for p in document.paragraphs] == [
         "Nội dung của nhóm", "Hình bổ sung", "Giải thích bổ sung", "Kết luận chương"
     ]

@@ -14,19 +14,23 @@ $\xi_i$ là slack variable. Nó đo mức vi phạm margin theo cách tối ưu.
 
 ![Điểm dương nằm trong biên với slack bằng 0,4](images/scientific/soft_margin.svg)
 
-*Hình 2: Điểm có nhãn +1 vẫn ở đúng phía ranh giới nhưng vi phạm biên: f(x) = 0.6 và slack tối thiểu bằng 0.4. Đây là dữ liệu tổng hợp.*
+*Hình 1: Điểm nhãn +1 vi phạm biên với f(x) = 0.6, slack bằng 0.4.*
 
-Soft-margin cũng giải quyết một vấn đề khác của hard-margin: chỉ một outlier nằm lẫn vào phía lớp đối diện cũng có thể làm hard-margin chọn một ranh giới rất lệch, margin gần như bằng 0.
+Điểm trong Hình 1 vẫn ở đúng phía ranh giới nhưng lọt vào vùng margin, nên cần một slack dương để ràng buộc (2.1) được thỏa.
+
+Soft-margin cũng giải quyết một vấn đề khác của hard-margin: chỉ một outlier nằm lẫn vào phía lớp đối diện cũng có thể làm hard-margin chọn một ranh giới rất lệch, margin gần như bằng 0 [[5]](10_image_credits.md#ref-5).
+
+Hình 2 dùng hai cụm tổng hợp cách xa nhau, cộng thêm một điểm nhãn −1 nằm sâu trong cụm +1. Hard margin (SVC tuyến tính, C rất lớn) phải nghiêng sát outlier để vẫn phân loại đúng mọi điểm, nên margin chỉ còn 0.095. Soft margin cho phép outlier vi phạm; C càng lớn thì mô hình càng ít chấp nhận vi phạm và margin càng co lại: 3.43 với C=0.1, 2.80 với C=1, 0.21 với C=100.
 
 ![Hard margin bị một outlier kéo nghiêng; soft margin với các giá trị C khác nhau](images/scientific/hard_vs_soft_margin.svg)
 
-*Hình 3: Dữ liệu tổng hợp hai cụm cách xa nhau, cộng thêm một điểm nhãn −1 nằm sâu trong cụm +1. Bên trái: hard margin (SVC tuyến tính, C rất lớn) buộc phải nghiêng sát outlier để vẫn phân loại đúng, margin chỉ còn 0.095. Bên phải: soft margin với C=0.1/1/100 trên cùng dữ liệu — C càng lớn, mô hình càng chấp nhận ít vi phạm hơn và margin càng co lại (3.43 → 2.80 → 0.21).*
+*Hình 2: Hard margin bị một outlier kéo nghiêng (trái); soft margin với ba giá trị C (phải).*
 
 ```python
 from sklearn.svm import SVC
 import numpy as np
 
-X = np.array([[-1., -1.], [1., 1.], [-2., -1.], [2., 1.]])  # 4 điểm của ví dụ giải tay
+X = np.array([[-1., -1.], [1., 1.], [-2., -1.], [2., 1.]])
 y = np.array([-1, 1, -1, 1])
 for C in [0.1, 1, 10]:
     clf = SVC(kernel='linear', C=C).fit(X, y)
@@ -70,11 +74,21 @@ $$
 \frac12\|w\|^2+C\sum_i\max(0,1-y_i f(x_i))\qquad\text{(2.4)}
 $$
 
-Hinge loss không phải cách duy nhất để phạt margin có dấu $z=y f(x)$ nhỏ. Logistic loss (đã co giãn để bằng 1 tại $z=0$, giống hinge) cũng giảm dần theo $z$, nhưng mượt và không bao giờ chạm hẳn 0.
+### Từ logistic loss đến hinge loss
+
+Muốn thấy vì sao SVM dùng hinge loss, hãy so sánh nó với logistic loss của hồi quy logistic, xét riêng từng lớp theo điểm số $f(x)$ [[5]](10_image_credits.md#ref-5). Với mẫu $y=+1$, logistic loss $\log(1+e^{-f(x)})$ (chia cho $\log2$ để bằng 1 tại $f(x)=0$) giảm dần khi $f(x)$ tăng nhưng không bao giờ bằng 0. Với mẫu $y=-1$, đồ thị lật ngược lại. Hinge loss giữ phần dốc đó nhưng cắt phẳng về 0 ngay khi mẫu vượt qua biên của lớp mình: $f(x)\geq1$ với $y=+1$ và $f(x)\leq-1$ với $y=-1$.
+
+![Loss của mẫu y=+1 và mẫu y=−1 theo điểm số f(x)](images/scientific/loss_per_class.svg)
+
+*Hình 3: Loss của từng lớp theo điểm số f(x); nét đứt là biên của lớp đó.*
+
+Hệ quả: một mẫu đã nằm ở đúng phía và ngoài biên thì không còn đóng góp gì vào hinge loss. Dời mẫu đó đi xa hơn nữa cũng không làm đổi nghiệm. Chỉ những mẫu "khó", nằm gần ranh giới hoặc vi phạm biên, mới quyết định ranh giới; đó chính là các support vector. Với logistic loss thì khác: mọi mẫu, kể cả mẫu rất dễ, đều kéo ranh giới một chút.
+
+Hai đồ thị trong Hình 3 là ảnh gương của nhau. Thay $f(x)$ bằng margin có dấu $z=y f(x)$ thì hai lớp gộp thành một đường duy nhất: hinge $\max(0,1-z)$ và logistic $\log(1+e^{-z})/\log2$. Hinge là đường gấp khúc, bằng 0 khi $z\geq1$; logistic luôn dương và chỉ giảm chậm dần.
 
 ![Logistic loss và hinge loss theo cùng một trục margin có dấu](images/scientific/logistic_vs_hinge.svg)
 
-*Hình 4: Hinge loss (xanh) là một đường gấp khúc, bằng 0 khi $z\geq1$. Logistic loss đã co giãn (đỏ, nét đứt) luôn dương, giảm chậm dần khi $z$ tăng chứ không "cắt" phẳng tại 1 như hinge.*
+*Hình 4: Logistic loss và hinge loss theo margin có dấu z = y f(x).*
 
 ```python
 import numpy as np
@@ -96,11 +110,11 @@ for z in [-2, -1, 0, 1, 2]:
 
 ![Hinge loss theo margin có dấu](images/scientific/hinge_loss.svg)
 
-*Hình 5: Khi margin có dấu đạt 1 trở lên, hinge loss bằng 0.*
+*Hình 5: Hinge loss bằng 0 khi margin có dấu đạt 1 trở lên.*
 
 ### Ba trường hợp của $\xi_i$
 
-Vị trí của một điểm so với margin quyết định $\xi_i$ rơi vào đúng một trong ba trường hợp sau:
+Vị trí của một điểm so với margin quyết định $\xi_i$ rơi vào đúng một trong ba trường hợp sau [[5]](10_image_credits.md#ref-5):
 
 | Điều kiện trên $y_i f(x_i)$ | $\xi_i$ | Ý nghĩa |
 |---|---|---|
@@ -108,9 +122,11 @@ Vị trí của một điểm so với margin quyết định $\xi_i$ rơi vào 
 | $0\leq y_i f(x_i)<1$ | $0<\xi_i\leq1$ | nằm trong margin, vẫn đúng phía |
 | $y_i f(x_i)<0$ | $\xi_i>1$ | phân loại sai |
 
-Chiếu lại Hình 5: điểm có $y=+1$, $f(x)=0.6$ cho $y f(x)=0.6$, rơi vào hàng giữa nên $\xi=1-0.6=0.4$, đúng giá trị đã nêu ở Hình 5.
+Hình 6 đặt ba ví dụ số của mục 4 lên cùng ranh giới $f(x)=x_1+x_2$. Đoạn màu đỏ nối mỗi điểm vi phạm với biên của lớp nó. Độ dài đoạn này bằng $\xi_i/\|w\|$, nên $\xi_i$ chính là khoảng cách từ điểm tới biên, đo theo đơn vị $1/\|w\|$. Điểm A nằm trong margin nhưng vẫn đúng phía nên $\xi=0.4<1$. Điểm C vượt qua cả ranh giới nên $\xi=1.2>1$. Điểm B ở ngoài biên của lớp mình nên $\xi=0$ và không có đoạn nối.
 
-*Ý tưởng minh họa tham khảo từ Phạm Đình Khanh, Machine Learning Algorithms to Practice, ch. 7 SVM: [phamdinhkhanh.github.io/deepai-book/ch_ml/SVM.html](https://phamdinhkhanh.github.io/deepai-book/ch_ml/SVM.html).*
+![Ba điểm ứng với ba trường hợp của slack](images/scientific/slack_cases.svg)
+
+*Hình 6: Ba trường hợp của $\xi$: trong margin (A), ngoài biên (B), phân loại sai (C).*
 
 ## 4. Ví dụ số
 

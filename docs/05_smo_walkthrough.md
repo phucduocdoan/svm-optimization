@@ -85,7 +85,7 @@ Hình dưới vẽ hộp khả thi $[0,C]\times[0,C]$ cho cả hai trường h�
 
 ![Hộp khả thi SMO với cận L, H và phép clip alpha_j](images/scientific/smo_lh_box.svg)
 
-*Hình 5.1: Hộp $[0,C]\times[0,C]$ trong mặt phẳng $(\alpha_i,\alpha_j)$; đoạn tô đậm là nghiệm của đường ràng buộc nằm trong hộp, hai nét đứt ngang là $L,H$, mũi tên đỏ là phép clip $\alpha_j^{new}$ về $[L,H]$.*
+*Hình 5.1: Hộp khả thi $[0,C]\times[0,C]$ và phép clip $\alpha_j$ về $[L,H]$.*
 
 ## 5. Cập nhật $\alpha_j$
 

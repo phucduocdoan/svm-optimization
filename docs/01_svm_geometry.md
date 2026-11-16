@@ -21,9 +21,11 @@ $$
 
 Trong 2D, siêu phẳng là đường thẳng. Nếu `w=[2,1]`, `b=-3`, đường phân chia là `2*x1 + x2 - 3 = 0`.
 
+Hình 1 là một ví dụ 2D tổng hợp, không phải kết quả Banknote. Các điểm khoanh tròn nằm đúng trên hai biên; đó là các điểm hỗ trợ.
+
 ![Hai lớp dữ liệu, ranh giới, hai biên và điểm hỗ trợ](images/scientific/svm_geometry.svg)
 
-*Hình 1: Ví dụ 2D tổng hợp, không phải kết quả Banknote. Các điểm khoanh tròn nằm trên biên.*
+*Hình 1: Ranh giới, hai biên và các điểm hỗ trợ trên dữ liệu 2D tổng hợp.*
 
 ## 3. Khoảng cách từ điểm đến siêu phẳng
 
@@ -61,15 +63,13 @@ Ví dụ 1D: điểm gần nhất của lớp $-1$ nằm tại $x=-1$, điểm g
 | $1$ | $2$ | $2$ | $2$ |
 | $2$ | $3$ | $1$ | $1$ |
 
-Khoảng an toàn nhỏ nhất đạt giá trị lớn nhất đúng tại $t=1$, vị trí cách đều hai điểm gần nhất — cũng là nơi margin theo công thức (1.3) đạt giá trị lớn nhất. Dịch $t$ về phía lớp nào thì lớp đó chịu thiệt.
+Khoảng an toàn nhỏ nhất đạt giá trị lớn nhất đúng tại $t=1$, vị trí cách đều hai điểm gần nhất — cũng là nơi margin theo công thức (1.3) đạt giá trị lớn nhất. Dịch $t$ về phía lớp nào thì lớp đó chịu thiệt [[5]](10_image_credits.md#ref-5).
 
-*Ý tưởng minh họa tham khảo từ Phạm Đình Khanh, Machine Learning Algorithms to Practice, ch. 7 SVM: [phamdinhkhanh.github.io/deepai-book/ch_ml/SVM.html](https://phamdinhkhanh.github.io/deepai-book/ch_ml/SVM.html).*
-
-Ý tưởng trên mở rộng tự nhiên sang 2D: không chỉ có một hướng để trượt ranh giới, mà còn phải chọn cả hướng pháp tuyến.
+Ý tưởng trên mở rộng tự nhiên sang 2D: không chỉ có một hướng để trượt ranh giới, mà còn phải chọn cả hướng pháp tuyến. Bên trái Hình 2 giữ nguyên hướng pháp tuyến và trượt ranh giới qua ba vị trí A, B, C: khoảng an toàn nhỏ nhất lớn nhất tại B, đường cách đều hai điểm gần nhất của hai lớp. Bên phải đổi sang một hướng pháp tuyến khác hẳn; hướng này vẫn phân tách đúng hai lớp nhưng margin chỉ còn 1.92, nhỏ hơn margin 2.83 của đường B (bằng hai lần khoảng an toàn nhỏ nhất 1.41).
 
 ![Nhiều ranh giới ứng viên trên cùng một bộ dữ liệu 2D tách được](images/scientific/candidate_boundaries.svg)
 
-*Hình 2: Bên trái: giữ nguyên hướng pháp tuyến, chỉ trượt ranh giới qua ba offset A, B, C — khoảng an toàn nhỏ nhất lớn nhất tại B, đường nằm cách đều hai điểm gần nhất của hai lớp. Bên phải: đổi sang một hướng pháp tuyến khác hẳn; hướng này vẫn phân tách đúng hai lớp nhưng margin chỉ còn 1.92, nhỏ hơn margin 2.83 của hướng tối ưu (đường B; margin bằng hai lần khoảng an toàn nhỏ nhất 1.41).*
+*Hình 2: Trượt ranh giới cùng hướng (trái) và đổi hướng pháp tuyến (phải).*
 
 Vì vậy, tối đa hóa margin tương đương tối thiểu hóa $\|w\|$. Ta dùng bình phương và hệ số 1/2 vì đạo hàm gọn hơn:
 

@@ -49,6 +49,22 @@ $$
 \text{margin}=\frac{2}{\|w\|_2}\qquad\text{(1.3)}
 $$
 
+### Trực giác "công bằng" của ranh giới cách đều
+
+Trong tất cả các đường thẳng song song cùng phân tách đúng hai lớp, đường cách đều điểm gần nhất của mỗi lớp là lựa chọn "công bằng" nhất: nếu đẩy nó lệch về phía lớp nào, lớp đó bị mất bớt khoảng an toàn trong khi lớp kia lại dư ra. Ranh giới cách đều là ranh giới không thiên vị bên nào, và hoá ra đó cũng chính là ranh giới có margin lớn nhất.
+
+Ví dụ 1D: điểm gần nhất của lớp $-1$ nằm tại $x=-1$, điểm gần nhất của lớp $+1$ nằm tại $x=3$. Với một ranh giới đặt tại vị trí $t$, khoảng an toàn còn lại của mỗi lớp là $t-(-1)=t+1$ (lớp $-1$) và $3-t$ (lớp $+1$):
+
+| $t$ | an toàn lớp $-1$ | an toàn lớp $+1$ | an toàn nhỏ nhất |
+|---|---:|---:|---:|
+| $-0.5$ | $0.5$ | $3.5$ | $0.5$ |
+| $1$ | $2$ | $2$ | $2$ |
+| $2$ | $3$ | $1$ | $1$ |
+
+Khoảng an toàn nhỏ nhất đạt giá trị lớn nhất đúng tại $t=1$, vị trí cách đều hai điểm gần nhất — cũng là nơi margin theo công thức (1.3) đạt giá trị lớn nhất. Dịch $t$ về phía lớp nào thì lớp đó chịu thiệt.
+
+*Ý tưởng minh họa tham khảo từ Phạm Đình Khanh, Machine Learning Algorithms to Practice, ch. 7 SVM: [phamdinhkhanh.github.io/deepai-book/ch_ml/SVM.html](https://phamdinhkhanh.github.io/deepai-book/ch_ml/SVM.html).*
+
 Vì vậy, tối đa hóa margin tương đương tối thiểu hóa $\|w\|$. Ta dùng bình phương và hệ số 1/2 vì đạo hàm gọn hơn:
 
 $$

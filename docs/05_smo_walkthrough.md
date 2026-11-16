@@ -81,6 +81,12 @@ $$
 
 Hai công thức khác nhau vì dấu của hai nhãn quyết định quan hệ giữa $\alpha_i$ và $\alpha_j$ khi giữ equality constraint.
 
+Hình dưới vẽ hộp khả thi $[0,C]\times[0,C]$ cho cả hai trường hợp: đoạn tô đậm là phần đường ràng buộc nằm trong hộp, hai nét đứt ngang là $L$ và $H$, dấu `x` đỏ là $\alpha_j^{new}$ trước khi clip và vòng tròn đỏ là giá trị sau khi clip về $[L,H]$.
+
+![Hộp khả thi SMO với cận L, H và phép clip alpha_j](images/scientific/smo_lh_box.svg)
+
+*Hình 5.1: Hộp $[0,C]\times[0,C]$ trong mặt phẳng $(\alpha_i,\alpha_j)$; đoạn tô đậm là nghiệm của đường ràng buộc nằm trong hộp, hai nét đứt ngang là $L,H$, mũi tên đỏ là phép clip $\alpha_j^{new}$ về $[L,H]$.*
+
 ## 5. Cập nhật $\alpha_j$
 
 Tính:

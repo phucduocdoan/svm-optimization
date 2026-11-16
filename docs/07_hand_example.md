@@ -61,6 +61,12 @@ $$
 \frac{2}{\sqrt{0.5}}=2\sqrt2\approx2.8284.
 $$
 
+Hình dưới vẽ bốn điểm, ranh giới $f(x)=0$, hai biên $f(x)=\pm1$, hai support vector $x_1,x_2$ được khoanh tròn, vector $w$ và đúng độ rộng biên vừa tính ở trên.
+
+![Bốn điểm, ranh giới, hai biên, vector w và độ rộng biên](images/scientific/hand_example.svg)
+
+*Hình 7.1: Ranh giới $f(x)=0$ (đường liền) và hai biên $f(x)=\pm1$ (nét đứt); $x_1,x_2$ khoanh tròn là support vector, mũi tên xanh là $w=(0.5,0.5)$, mũi tên đỏ có độ dài đúng bằng $2\sqrt2\approx2.8284$.*
+
 ## 4. Tìm alpha và kiểm tra Dual
 
 Chỉ hai điểm đầu active nên đặt $\alpha_3=\alpha_4=0$. Ràng buộc equality:

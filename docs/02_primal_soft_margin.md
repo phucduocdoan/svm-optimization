@@ -53,6 +53,20 @@ $$
 
 *Hình 3: Khi margin có dấu đạt 1 trở lên, hinge loss bằng 0.*
 
+### Ba trường hợp của $\xi_i$
+
+Vị trí của một điểm so với margin quyết định $\xi_i$ rơi vào đúng một trong ba trường hợp sau:
+
+| Điều kiện trên $y_i f(x_i)$ | $\xi_i$ | Ý nghĩa |
+|---|---|---|
+| $y_i f(x_i)\geq 1$ | $\xi_i=0$ | nằm ngoài hoặc đúng trên margin |
+| $0\leq y_i f(x_i)<1$ | $0<\xi_i\leq1$ | nằm trong margin, vẫn đúng phía |
+| $y_i f(x_i)<0$ | $\xi_i>1$ | phân loại sai |
+
+Chiếu lại Hình 3: điểm có $y=+1$, $f(x)=0.6$ cho $y f(x)=0.6$, rơi vào hàng giữa nên $\xi=1-0.6=0.4$, đúng giá trị đã nêu ở Hình 3.
+
+*Ý tưởng minh họa tham khảo từ Phạm Đình Khanh, Machine Learning Algorithms to Practice, ch. 7 SVM: [phamdinhkhanh.github.io/deepai-book/ch_ml/SVM.html](https://phamdinhkhanh.github.io/deepai-book/ch_ml/SVM.html).*
+
 ## 4. Ví dụ số
 
 Giả sử nhãn $y=+1$ và điểm số $f(x)=0.6$:

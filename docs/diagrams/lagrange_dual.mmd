@@ -1,0 +1,23 @@
+flowchart LR
+  subgraph PRIMAL["1 · Primal"]
+    direction TB
+    A["min ½‖w‖²+CΣξᵢ<br/>r.b. margin & ξᵢ≥0"]
+  end
+  subgraph LAGRANGE["2 · Lagrangian"]
+    direction TB
+    B["L(w,b,ξ,α,μ)<br/>αᵢ≥0, μᵢ≥0"]
+  end
+  subgraph DAOHAM["3 · Đạo hàm = 0"]
+    direction TB
+    C["∂L/∂w=0<br/>w=Σαᵢyᵢxᵢ"] --> D["∂L/∂b=0<br/>Σαᵢyᵢ=0"] --> E["∂L/∂ξᵢ=0<br/>C−αᵢ−μᵢ=0"]
+  end
+  subgraph DUAL["4 · Dual"]
+    direction TB
+    F["max Σαᵢ−½ΣΣαᵢαⱼyᵢyⱼxᵢᵀxⱼ<br/>r.b. Σαᵢyᵢ=0 · 0≤αᵢ≤C"]
+  end
+  PRIMAL --> LAGRANGE --> DAOHAM --> DUAL
+  DUAL -. "thay xᵢᵀxⱼ bằng K(xᵢ,xⱼ)" .-> KERNEL["Kernel Trick<br/>→ xem doc 06"]
+  classDef standard fill:#f4f6f8,stroke:#84929d,color:#1e2933,stroke-width:1.3px
+  classDef focus fill:#e7efef,stroke:#6e8a87,color:#1e2933,stroke-width:1.4px
+  class A,B,C,D,E standard
+  class F,KERNEL focus

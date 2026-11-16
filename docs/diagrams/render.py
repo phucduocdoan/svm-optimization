@@ -5,13 +5,13 @@ Run `uv run --with playwright python -m playwright install chromium`, then
 `uv run --with playwright python docs/diagrams/render.py`.
 `CHROMIUM_EXECUTABLE_PATH` can select an existing Chromium installation.
 """
-from pathlib import Path
 import os
+from pathlib import Path
 
 from playwright.sync_api import sync_playwright
 
 ROOT = Path(__file__).resolve().parent
-DIAGRAMS = ("overview", "experiment_pipeline", "smo_pair_update", "architecture")
+DIAGRAMS = ("overview", "experiment_pipeline", "smo_pair_update", "architecture", "lagrange_dual")
 
 
 def main():

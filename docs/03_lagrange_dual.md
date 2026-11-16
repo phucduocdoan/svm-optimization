@@ -2,6 +2,34 @@
 
 Đây là phần toán trọng tâm của đồ án. Hãy hiểu ý nghĩa trước, sau đó tự viết lại từng phép đạo hàm.
 
+## 0. Khởi động: một bài QP tí hon với một nhân tử
+
+Trước khi vào Lagrangian của SVM, hãy giải một bài toán quy hoạch bậc hai (QP) rất nhỏ: hai biến, một ràng buộc tuyến tính, để thấy nhân tử Lagrange hoạt động ra sao trong trường hợp đơn giản nhất.
+
+Xét bài toán
+
+$$
+\min_{x,y}\ x^2+2y^2\quad\text{sao cho}\quad x+y=3.
+$$
+
+Gắn ràng buộc vào hàm mục tiêu bằng một nhân tử $\lambda$:
+
+$$
+L(x,y,\lambda)=x^2+2y^2-\lambda(x+y-3).
+$$
+
+Cho đạo hàm riêng bằng 0:
+
+$$
+\frac{\partial L}{\partial x}=2x-\lambda=0,\qquad\frac{\partial L}{\partial y}=4y-\lambda=0
+$$
+
+nên $x=\lambda/2$ và $y=\lambda/4$. Thay vào ràng buộc $x+y=3$: $\lambda/2+\lambda/4=3$, suy ra $\lambda=4$, do đó $x=2$, $y=1$ và giá trị nhỏ nhất của mục tiêu là $2^2+2\times1^2=6$.
+
+Chạy lại bằng `scipy.optimize.minimize` với ràng buộc đẳng thức `x+y=3` cho cùng kết quả $x=2,\ y=1$, mục tiêu $\approx6$, khớp với lời giải tay. Cơ chế vừa dùng — đưa ràng buộc vào hàm mục tiêu qua một nhân tử rồi cho đạo hàm bằng 0 — chính là cách phần dưới sẽ lặp lại với SVM, chỉ khác là có nhiều biến hơn và các ràng buộc là bất đẳng thức nên nhân tử ($\alpha_i,\mu_i$) phải không âm.
+
+*Ý tưởng minh họa tham khảo từ Phạm Đình Khanh, Machine Learning Algorithms to Practice, ch. 7 SVM: [phamdinhkhanh.github.io/deepai-book/ch_ml/SVM.html](https://phamdinhkhanh.github.io/deepai-book/ch_ml/SVM.html).*
+
 ## 1. Nhắc lại Primal
 
 $$
@@ -92,6 +120,36 @@ $$
 $$
 
 Đây là bài toán đối ngẫu bậc hai. Ta tối đa hóa một hàm lõm theo alpha (tương đương tối thiểu hóa hàm lồi sau khi đổi dấu), với các ràng buộc tuyến tính.
+
+Sơ đồ sau tóm tắt toàn bộ quá trình suy diễn ở trên (Primal → Lagrangian → đạo hàm → Dual); đọc từ trái sang phải để nối lại các bước (3.1)–(3.6), nhánh chấm bên phải chỉ sang doc 06 khi áp dụng Kernel Trick.
+
+```mermaid
+flowchart LR
+  subgraph PRIMAL["1 · Primal"]
+    direction TB
+    A["min ½‖w‖²+CΣξᵢ<br/>r.b. margin & ξᵢ≥0"]
+  end
+  subgraph LAGRANGE["2 · Lagrangian"]
+    direction TB
+    B["L(w,b,ξ,α,μ)<br/>αᵢ≥0, μᵢ≥0"]
+  end
+  subgraph DAOHAM["3 · Đạo hàm = 0"]
+    direction TB
+    C["∂L/∂w=0<br/>w=Σαᵢyᵢxᵢ"] --> D["∂L/∂b=0<br/>Σαᵢyᵢ=0"] --> E["∂L/∂ξᵢ=0<br/>C−αᵢ−μᵢ=0"]
+  end
+  subgraph DUAL["4 · Dual"]
+    direction TB
+    F["max Σαᵢ−½ΣΣαᵢαⱼyᵢyⱼxᵢᵀxⱼ<br/>r.b. Σαᵢyᵢ=0 · 0≤αᵢ≤C"]
+  end
+  PRIMAL --> LAGRANGE --> DAOHAM --> DUAL
+  DUAL -. "thay xᵢᵀxⱼ bằng K(xᵢ,xⱼ)" .-> KERNEL["Kernel Trick<br/>→ xem doc 06"]
+  classDef standard fill:#f4f6f8,stroke:#84929d,color:#1e2933,stroke-width:1.3px
+  classDef focus fill:#e7efef,stroke:#6e8a87,color:#1e2933,stroke-width:1.4px
+  class A,B,C,D,E standard
+  class F,KERNEL focus
+```
+
+Nguồn: [`diagrams/lagrange_dual.mmd`](diagrams/lagrange_dual.mmd).
 
 ## 5. Primal và Dual khác nhau thế nào?
 

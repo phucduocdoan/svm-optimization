@@ -99,6 +99,7 @@ def add_table(document: Document, headers, rows, widths=None):
 def add_equation(document: Document, latex: str, number: str) -> None:
     """Chèn công thức LaTeX thành Word OMML, có số công thức bên phải."""
     p = document.add_paragraph()
+    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
     p.paragraph_format.tab_stops.add_tab_stop(Cm(8), WD_TAB_ALIGNMENT.CENTER)
     p.paragraph_format.tab_stops.add_tab_stop(Cm(16), WD_TAB_ALIGNMENT.RIGHT)
     p.add_run("\t")
@@ -114,16 +115,30 @@ def add_equation(document: Document, latex: str, number: str) -> None:
 
 
 INLINE_MATH = re.compile(
-    r"x_i\^T|w\^T|x_i|y_i|alpha_i|xi_i|phi\(x_i\)|phi\(x\)|"
-    r"K\(x_i, x_j\)|gamma|L_hinge|\|\|w\|\||\|\|x_i - x_j\|\|"
+    r"K\(x_i, x_j\)|phi\(x_i\)|phi\(x\)|x_i\^T|w\^T|"
+    r"alpha_i|xi_i|L_hinge|gamma|[wxy]_[0-9]+|[wxy]_[a-z]|x_i|y_i|(?<!\w)C(?!\w)|"
+    r"\|\|w\|\||\|\|x_i - x_j\|\||\|\|x_i\|\||"
+    r">=|<=|=>|(?<=\s)\.(?=\s)|(?<!\w)[=+*/^<>-](?!\w)"
 )
+ATOM = r"(?:\|\|[^|]+\|\||\[[0-9.,\s+\-]+\](?:\^T)?|[A-Za-z]+(?:\^[A-Za-z]+)?(?:_[A-Za-z0-9]+)?(?:\([^()]*\))?|[+-]?\d+(?:\.\d+)?)"
+MATH_EXPRESSION = re.compile(rf"(?<!\w){ATOM}(?:\s*(?:>=|<=|=>|=|>|<|\+|-|\*|/|\^|\.|≈)\s*{ATOM})+(?!\w)")
+
+
+def to_latex(expression: str) -> str:
+    expression = expression.strip().replace("||", r"\|")
+    for old, new in [("alpha_i", r"\alpha_i"), ("xi_i", r"\xi_i"), ("gamma", r"\gamma"), ("phi", r"\phi"), ("L_hinge", r"L_{\mathrm{hinge}}"), (">=", r"\geq"), ("<=", r"\leq"), ("=>", r"\Rightarrow"), ("≈", r"\approx"), (" . ", r" \cdot ")]:
+        expression = expression.replace(old, new)
+    return expression
 
 
 def format_inline_math(document: Document) -> None:
     """Render common SVM variables as native Word math without changing prose."""
     for paragraph in list(document.paragraphs):
         source = paragraph.text
-        matches = list(INLINE_MATH.finditer(source))
+        matches = [m for m in MATH_EXPRESSION.finditer(source) if not (re.fullmatch(r"\d+\.\d+", m.group()) and m.start() > 0 and m.end() < len(source) and source[m.start()-1:m.start()] == "(" and source[m.end():m.end()+1] == ")")]
+        covered = [(m.start(), m.end()) for m in matches]
+        matches += [m for m in INLINE_MATH.finditer(source) if not any(a <= m.start() and m.end() <= b for a, b in covered)]
+        matches.sort(key=lambda m: m.start())
         if not matches:
             continue
         p = paragraph._p
@@ -135,12 +150,26 @@ def format_inline_math(document: Document) -> None:
             if match.start() > cursor:
                 paragraph.add_run(source[cursor:match.start()])
             token = match.group()
-            latex = {
+            if MATH_EXPRESSION.fullmatch(token):
+                latex = to_latex(token)
+            else:
+                latex = {
                 "x_i^T": r"x_i^T", "w^T": r"w^T", "x_i": r"x_i", "y_i": r"y_i",
+                "w_1": r"w_1", "w_2": r"w_2", "x_1": r"x_1", "x_2": r"x_2", "y_1": r"y_1", "y_2": r"y_2",
+                "x_3": r"x_3", "w_i": r"w_i",
                 "alpha_i": r"\alpha_i", "xi_i": r"\xi_i", "phi(x_i)": r"\phi(x_i)",
                 "phi(x)": r"\phi(x)", "K(x_i, x_j)": r"K(x_i,x_j)", "gamma": r"\gamma",
                 "L_hinge": r"L_{\mathrm{hinge}}", "||w||": r"\|w\|", "||x_i - x_j||": r"\|x_i-x_j\|",
-            }[token]
+                "||x_i||": r"\|x_i\|",
+                "C": "C",
+                ">=": r"\geq", "<=": r"\leq", "=>": r"\Rightarrow",
+                ".": r"\cdot", "=": "=", "+": "+", "-": "-", "/": "/", "*": "\\times", "^": "^", "<": "<", ">": ">",
+                }.get(token)
+            if latex is None and re.fullmatch(r"[wxy]_(?:[a-z]|\d+)", token):
+                base, sub = token.split("_", 1)
+                latex = f"{base}_{{{sub}}}"
+            if latex is None:
+                raise ValueError(f"Chưa có quy tắc LaTeX cho ký hiệu: {token}")
             mathml = latex_to_mathml(latex)
             omml = mathml_to_omml(mathml).replace(
                 "<m:oMath>", '<m:oMath xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math">', 1
@@ -149,6 +178,49 @@ def format_inline_math(document: Document) -> None:
             cursor = match.end()
         if cursor < len(source):
             paragraph.add_run(source[cursor:])
+
+
+DISPLAY_FORMULAS = [
+    ("w^T . x - b = 0", r"w^T x-b=0", "(2.1)"),
+    ("(1/2) . ||w||^2", r"\frac{1}{2}\|w\|^2", "(2.2)"),
+    ("y_i . (w^T . x_i - b) >= 1, với mọi i = 1, 2, ..., N", r"y_i(w^Tx_i-b)\geq1,\quad i=1,\ldots,N", "(2.3)"),
+    ("(1/2) . ||w||^2 + C . Tổng(xi_i)", r"\frac{1}{2}\|w\|^2+C\sum_i\xi_i", "(2.4)"),
+    ("y_i . (w^T . x_i - b) >= 1 - xi_i và xi_i >= 0", r"y_i(w^Tx_i-b)\geq1-\xi_i,\quad\xi_i\geq0", "(2.5)"),
+    ("L_hinge = max(0, 1 - y_i . (w^T . x_i - b))", r"L_{\mathrm{hinge}}=\max(0,1-y_i(w^Tx_i-b))", "(2.6)"),
+    ("K(x_i, x_j) = phi(x_i)^T . phi(x_j)", r"K(x_i,x_j)=\phi(x_i)^T\phi(x_j)", "(3.1)"),
+    ("K(x_i, x_j) = x_i^T . x_j", r"K(x_i,x_j)=x_i^Tx_j", "(3.2)"),
+    ("K(x_i, x_j) = (gamma . x_i^T . x_j + r)^d", r"K(x_i,x_j)=(\gamma x_i^Tx_j+r)^d", "(3.3)"),
+    ("K(x_i, x_j) = exp( -gamma . ||x_i - x_j||^2 )", r"K(x_i,x_j)=\exp(-\gamma\|x_i-x_j\|^2)", "(3.4)"),
+    ("K * (K - 1) / 2", r"\frac{K(K-1)}{2}", "(3.5)"),
+    ("+1 . (2w_1 + 2w_2 - b) >= 1", r"(+1)(2w_1+2w_2-b)\geq1", "(4.1)"),
+    ("+1 . (2w_1 + 0w_2 - b) >= 1", r"(+1)(2w_1-b)\geq1", "(4.2)"),
+    ("-1 . (0w_1 + 0w_2 - b) >= 1 => b >= 1", r"(-1)(-b)\geq1\Rightarrow b\geq1", "(4.3)"),
+    ("0.5 . x_1 + 0.5 . x_2 - 1 = 0", r"0.5x_1+0.5x_2-1=0", "(4.4)"),
+    ("2 / ||w|| = 2 / căn bậc hai(0.5^2 + 0.5^2) khoảng 2.828", r"\frac{2}{\|w\|}=\frac{2}{\sqrt{0.5^2+0.5^2}}\approx2.828", "(4.5)"),
+]
+
+
+def format_display_equations(document: Document) -> None:
+    for paragraph in list(document.paragraphs):
+        source = paragraph.text
+        for raw, latex, number in sorted(DISPLAY_FORMULAS, key=lambda item: len(item[0]), reverse=True):
+            if raw not in source:
+                continue
+            prefix = source[:source.index(raw)].strip()
+            paragraph.text = prefix
+            equation = document.add_paragraph()
+            equation.paragraph_format.tab_stops.add_tab_stop(Cm(8), WD_TAB_ALIGNMENT.CENTER)
+            equation.paragraph_format.tab_stops.add_tab_stop(Cm(16), WD_TAB_ALIGNMENT.RIGHT)
+            equation.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            equation.add_run("\t")
+            mathml = latex_to_mathml(latex)
+            omml = mathml_to_omml(mathml).replace("<m:oMath>", '<m:oMath xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math">', 1)
+            equation._p.append(parse_xml(omml.encode("utf-8")))
+            equation.add_run(f"\t{number}")
+            paragraph._p.addnext(equation._p)
+            if not prefix:
+                paragraph._p.getparent().remove(paragraph._p)
+            break
 
 
 def fmt(value, digits=4):
@@ -343,14 +415,12 @@ def main() -> None:
 
     def soft_margin():
         document.add_paragraph("Trong code, hàm quyết định dùng quy ước wᵀx+b; quy ước này tương đương wᵀx−b trong bản nền khi đổi dấu bias. Hàm mục tiêu soft margin được viết:")
-        add_equation(document, r"\min_{w,b,\xi}\;\frac{1}{2}\|w\|^2+C\sum_i\xi_i", "(2.4)")
         add_figure(document, ILLUSTRATIONS / "soft_margin.png", "Hình 2.2. Một điểm vi phạm biên với slack dương; dữ liệu tổng hợp.", width=4.6)
         add_figure(document, ILLUSTRATIONS / "hinge_loss.png", "Hình 2.3. Hinge loss theo margin có dấu.", width=4.6)
     insert_before(document, find_paragraph(document, "Phương pháp nhân tử Lagrange và bài toán đối ngẫu"), soft_margin)
 
     def kernel():
         document.add_paragraph("Hình sau so sánh Linear và RBF trên cùng dữ liệu XOR tổng hợp; đây là hình minh họa trên train, không phải kết quả Banknote.")
-        add_equation(document, r"K_{\mathrm{RBF}}(x,z)=\exp(-\gamma\|x-z\|^2)", "(3.1)")
         add_figure(document, ILLUSTRATIONS / "linear_rbf_xor.png", "Hình 3.1. Linear và RBF trên dữ liệu XOR tổng hợp.", width=6.0)
     insert_before(document, find_paragraph(document, "Mở rộng SVM cho bài toán phân lớp đa lớp và hồi quy (SVR)"), kernel)
 
@@ -362,7 +432,7 @@ def main() -> None:
     def setup():
         document.add_paragraph(f"Thực nghiệm bổ sung dùng UCI Banknote Authentication: {summary['n_samples']} mẫu, {summary['n_features']} đặc trưng, train/test {summary['train_samples']}/{summary['test_samples']}, chia phân tầng với random_state={summary['random_state']}. StandardScaler chỉ fit trên train; trong cross-validation, scaler được fit lại trên train của từng fold.")
         document.add_paragraph("SMO cập nhật hai hệ số alpha mỗi lần để giữ ràng buộc của bài toán dual:")
-        add_equation(document, r"\sum_i\alpha_i y_i=0,\qquad 0\leq\alpha_i\leq C", "(4.1)")
+        add_equation(document, r"\sum_i\alpha_i y_i=0,\qquad 0\leq\alpha_i\leq C", "(4.6)")
         add_figure(document, DIAGRAMS / "architecture.png", "Hình 4.1. Kiến trúc module của project.", width=6.0)
         add_figure(document, DIAGRAMS / "experiment_pipeline.png", "Hình 4.2. Pipeline thực nghiệm Banknote.", width=6.0)
         add_figure(document, DIAGRAMS / "smo_pair_update.png", "Hình 4.3. Một vòng cập nhật cặp SMO.", width=6.0)
@@ -393,6 +463,7 @@ def main() -> None:
     insert_before(document, find_paragraph(document, "PHỤ LỤC"), references)
 
     document.add_paragraph("Tái lập kết quả: chạy uv sync --locked, uv run python -m experiments.06_report_benchmark và uv run python reports/generate_docx.py từ thư mục gốc project.")
+    format_display_equations(document)
     format_inline_math(document)
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)
     document.save(str(OUTPUT))

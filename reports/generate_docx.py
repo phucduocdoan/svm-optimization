@@ -19,13 +19,11 @@ from pathlib import Path
 import pandas as pd
 from docx import Document
 from docx.enum.table import WD_CELL_VERTICAL_ALIGNMENT
-from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_TAB_ALIGNMENT
+from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml import OxmlElement, parse_xml
 from docx.oxml.ns import qn
 from docx.shared import Cm, Inches, Pt
-from latex2mathml.converter import convert as latex_to_mathml
-from mathml2omml import convert as mathml_to_omml
-
+from report_math import render_math
 
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / "reports" / "svm_optimization_report.docx"
@@ -69,14 +67,33 @@ def add_caption(document: Document, text: str) -> None:
     p.add_run(text)
 
 
-def add_figure(document: Document, path: Path, caption: str, width: float = 6.1) -> None:
+FIGURE_CAPTIONS = {row.split("|", 2)[1].strip(" |\t"): row.split("|", 2)[2].strip(" |\t") for row in (ROOT / "reports" / "figure_captions.md").read_text(encoding="utf-8").splitlines() if row.startswith("|") and not row.startswith("| File")}
+
+
+def figure_caption(path: Path, fallback: str | None = None) -> str:
+    configured = FIGURE_CAPTIONS.get(path.name) or next((value for name, value in FIGURE_CAPTIONS.items() if Path(name).stem == path.stem), None)
+    for markdown in (ROOT / "docs").glob("*.md"):
+        lines = markdown.read_text(encoding="utf-8").splitlines()
+        for index, line in enumerate(lines[:-1]):
+            if re.search(r"!\[[^]]*\]\([^)]*/" + re.escape(path.stem) + r"\.(?:svg|png)\)", line):
+                caption_line = next((value.strip().strip("*") for value in lines[index + 1:index + 5] if value.strip().startswith("*Hình ")), "")
+                description = caption_line.split(":", 1)[-1].strip() if caption_line.startswith("Hình ") else caption_line
+                if configured:
+                    label_match = re.match(r"^(?:Hình|Bảng)\s+\d+(?:\.\d+)*\.", configured)
+                    label = label_match.group(0) if label_match else ""
+                    return f"{label} {description}" if description else configured
+                return description
+    return configured or fallback or path.stem.replace("_", " ").capitalize()
+
+
+def add_figure(document: Document, path: Path, caption: str | None = None, width: float = 6.1) -> None:
     if not path.exists():
         raise FileNotFoundError(f"Thiếu hình: {path}")
     p = document.add_paragraph()
     p.alignment = WD_ALIGN_PARAGRAPH.CENTER
     p.paragraph_format.keep_with_next = True
     p.add_run().add_picture(str(path), width=Inches(width))
-    add_caption(document, caption)
+    add_caption(document, figure_caption(path, caption))
 
 
 def add_table(document: Document, headers, rows, widths=None):
@@ -94,133 +111,6 @@ def add_table(document: Document, headers, rows, widths=None):
                 cell.width = Inches(width)
     document.add_paragraph()
     return table
-
-
-def add_equation(document: Document, latex: str, number: str) -> None:
-    """Chèn công thức LaTeX thành Word OMML, có số công thức bên phải."""
-    p = document.add_paragraph()
-    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    p.paragraph_format.tab_stops.add_tab_stop(Cm(8), WD_TAB_ALIGNMENT.CENTER)
-    p.paragraph_format.tab_stops.add_tab_stop(Cm(16), WD_TAB_ALIGNMENT.RIGHT)
-    p.add_run("\t")
-    mathml = latex_to_mathml(latex)
-    omml = mathml_to_omml(mathml).replace(
-        "<m:oMath>",
-        '<m:oMath xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math">',
-        1,
-    )
-    p._p.append(parse_xml(omml.encode("utf-8")))
-    if number:
-        p.add_run(f"\t{number}")
-
-
-INLINE_MATH = re.compile(
-    r"K\(x_i, x_j\)|phi\(x_i\)|phi\(x\)|x_i\^T|w\^T|"
-    r"alpha_i|xi_i|L_hinge|gamma|[wxy]_[0-9]+|[wxy]_[a-z]|x_i|y_i|(?<!\w)C(?!\w)|"
-    r"\|\|w\|\||\|\|x_i - x_j\|\||\|\|x_i\|\||"
-    r">=|<=|=>|(?<=\s)\.(?=\s)|(?<!\w)[=+*/^<>-](?!\w)"
-)
-ATOM = r"(?:\|\|[^|]+\|\||\[[0-9.,\s+\-]+\](?:\^T)?|[A-Za-z]+(?:\^[A-Za-z]+)?(?:_[A-Za-z0-9]+)?(?:\([^()]*\))?|[+-]?\d+(?:\.\d+)?)"
-MATH_EXPRESSION = re.compile(rf"(?<!\w){ATOM}(?:\s*(?:>=|<=|=>|=|>|<|\+|-|\*|/|\^|\.|≈)\s*{ATOM})+(?!\w)")
-
-
-def to_latex(expression: str) -> str:
-    expression = expression.strip().replace("||", r"\|")
-    for old, new in [("alpha_i", r"\alpha_i"), ("xi_i", r"\xi_i"), ("gamma", r"\gamma"), ("phi", r"\phi"), ("L_hinge", r"L_{\mathrm{hinge}}"), (">=", r"\geq"), ("<=", r"\leq"), ("=>", r"\Rightarrow"), ("≈", r"\approx"), (" . ", r" \cdot ")]:
-        expression = expression.replace(old, new)
-    return expression
-
-
-def format_inline_math(document: Document) -> None:
-    """Render common SVM variables as native Word math without changing prose."""
-    for paragraph in list(document.paragraphs):
-        source = paragraph.text
-        matches = [m for m in MATH_EXPRESSION.finditer(source) if not (re.fullmatch(r"\d+\.\d+", m.group()) and m.start() > 0 and m.end() < len(source) and source[m.start()-1:m.start()] == "(" and source[m.end():m.end()+1] == ")")]
-        covered = [(m.start(), m.end()) for m in matches]
-        matches += [m for m in INLINE_MATH.finditer(source) if not any(a <= m.start() and m.end() <= b for a, b in covered)]
-        matches.sort(key=lambda m: m.start())
-        if not matches:
-            continue
-        p = paragraph._p
-        for child in list(p):
-            if child.tag != qn("w:pPr"):
-                p.remove(child)
-        cursor = 0
-        for match in matches:
-            if match.start() > cursor:
-                paragraph.add_run(source[cursor:match.start()])
-            token = match.group()
-            if MATH_EXPRESSION.fullmatch(token):
-                latex = to_latex(token)
-            else:
-                latex = {
-                "x_i^T": r"x_i^T", "w^T": r"w^T", "x_i": r"x_i", "y_i": r"y_i",
-                "w_1": r"w_1", "w_2": r"w_2", "x_1": r"x_1", "x_2": r"x_2", "y_1": r"y_1", "y_2": r"y_2",
-                "x_3": r"x_3", "w_i": r"w_i",
-                "alpha_i": r"\alpha_i", "xi_i": r"\xi_i", "phi(x_i)": r"\phi(x_i)",
-                "phi(x)": r"\phi(x)", "K(x_i, x_j)": r"K(x_i,x_j)", "gamma": r"\gamma",
-                "L_hinge": r"L_{\mathrm{hinge}}", "||w||": r"\|w\|", "||x_i - x_j||": r"\|x_i-x_j\|",
-                "||x_i||": r"\|x_i\|",
-                "C": "C",
-                ">=": r"\geq", "<=": r"\leq", "=>": r"\Rightarrow",
-                ".": r"\cdot", "=": "=", "+": "+", "-": "-", "/": "/", "*": "\\times", "^": "^", "<": "<", ">": ">",
-                }.get(token)
-            if latex is None and re.fullmatch(r"[wxy]_(?:[a-z]|\d+)", token):
-                base, sub = token.split("_", 1)
-                latex = f"{base}_{{{sub}}}"
-            if latex is None:
-                raise ValueError(f"Chưa có quy tắc LaTeX cho ký hiệu: {token}")
-            mathml = latex_to_mathml(latex)
-            omml = mathml_to_omml(mathml).replace(
-                "<m:oMath>", '<m:oMath xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math">', 1
-            )
-            p.append(parse_xml(omml.encode("utf-8")))
-            cursor = match.end()
-        if cursor < len(source):
-            paragraph.add_run(source[cursor:])
-
-
-DISPLAY_FORMULAS = [
-    ("w^T . x - b = 0", r"w^T x-b=0", "(2.1)"),
-    ("(1/2) . ||w||^2", r"\frac{1}{2}\|w\|^2", "(2.2)"),
-    ("y_i . (w^T . x_i - b) >= 1, với mọi i = 1, 2, ..., N", r"y_i(w^Tx_i-b)\geq1,\quad i=1,\ldots,N", "(2.3)"),
-    ("(1/2) . ||w||^2 + C . Tổng(xi_i)", r"\frac{1}{2}\|w\|^2+C\sum_i\xi_i", "(2.4)"),
-    ("y_i . (w^T . x_i - b) >= 1 - xi_i và xi_i >= 0", r"y_i(w^Tx_i-b)\geq1-\xi_i,\quad\xi_i\geq0", "(2.5)"),
-    ("L_hinge = max(0, 1 - y_i . (w^T . x_i - b))", r"L_{\mathrm{hinge}}=\max(0,1-y_i(w^Tx_i-b))", "(2.6)"),
-    ("K(x_i, x_j) = phi(x_i)^T . phi(x_j)", r"K(x_i,x_j)=\phi(x_i)^T\phi(x_j)", "(3.1)"),
-    ("K(x_i, x_j) = x_i^T . x_j", r"K(x_i,x_j)=x_i^Tx_j", "(3.2)"),
-    ("K(x_i, x_j) = (gamma . x_i^T . x_j + r)^d", r"K(x_i,x_j)=(\gamma x_i^Tx_j+r)^d", "(3.3)"),
-    ("K(x_i, x_j) = exp( -gamma . ||x_i - x_j||^2 )", r"K(x_i,x_j)=\exp(-\gamma\|x_i-x_j\|^2)", "(3.4)"),
-    ("K * (K - 1) / 2", r"\frac{K(K-1)}{2}", "(3.5)"),
-    ("+1 . (2w_1 + 2w_2 - b) >= 1", r"(+1)(2w_1+2w_2-b)\geq1", "(4.1)"),
-    ("+1 . (2w_1 + 0w_2 - b) >= 1", r"(+1)(2w_1-b)\geq1", "(4.2)"),
-    ("-1 . (0w_1 + 0w_2 - b) >= 1 => b >= 1", r"(-1)(-b)\geq1\Rightarrow b\geq1", "(4.3)"),
-    ("0.5 . x_1 + 0.5 . x_2 - 1 = 0", r"0.5x_1+0.5x_2-1=0", "(4.4)"),
-    ("2 / ||w|| = 2 / căn bậc hai(0.5^2 + 0.5^2) khoảng 2.828", r"\frac{2}{\|w\|}=\frac{2}{\sqrt{0.5^2+0.5^2}}\approx2.828", "(4.5)"),
-]
-
-
-def format_display_equations(document: Document) -> None:
-    for paragraph in list(document.paragraphs):
-        source = paragraph.text
-        for raw, latex, number in sorted(DISPLAY_FORMULAS, key=lambda item: len(item[0]), reverse=True):
-            if raw not in source:
-                continue
-            prefix = source[:source.index(raw)].strip()
-            paragraph.text = prefix
-            equation = document.add_paragraph()
-            equation.paragraph_format.tab_stops.add_tab_stop(Cm(8), WD_TAB_ALIGNMENT.CENTER)
-            equation.paragraph_format.tab_stops.add_tab_stop(Cm(16), WD_TAB_ALIGNMENT.RIGHT)
-            equation.alignment = WD_ALIGN_PARAGRAPH.CENTER
-            equation.add_run("\t")
-            mathml = latex_to_mathml(latex)
-            omml = mathml_to_omml(mathml).replace("<m:oMath>", '<m:oMath xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math">', 1)
-            equation._p.append(parse_xml(omml.encode("utf-8")))
-            equation.add_run(f"\t{number}")
-            paragraph._p.addnext(equation._p)
-            if not prefix:
-                paragraph._p.getparent().remove(paragraph._p)
-            break
 
 
 def fmt(value, digits=4):
@@ -365,27 +255,21 @@ def refresh_toc(document: Document) -> None:
     # Danh mục trong bản nền còn là ví dụ từ template, với bookmark không tồn tại.
     paragraphs = document.paragraphs
     index = next(i for i, p in enumerate(paragraphs) if p.text.strip() == "DANH MỤC CÁC HÌNH ẢNH")
-    paragraphs[index + 1].text = "\n".join([
-        "Hình 1.1. Lộ trình nghiên cứu SVM",
-        "Hình 2.1. Siêu phẳng và support vectors",
-        "Hình 2.2. Soft margin và slack",
-        "Hình 2.3. Hinge loss",
-        "Hình 3.1. Linear và RBF trên XOR",
-        "Hình 4.1. Kiến trúc module",
-        "Hình 4.2. Pipeline Banknote",
-        "Hình 4.3. Một vòng SMO",
-        "Hình 4.4. So sánh metrics",
-        "Hình 4.5. Ma trận nhầm lẫn",
-        "Hình 4.6. F1 trung bình 5-fold CV",
-        "Hình 4.7. Hội tụ SMO",
-        "Hình 4.8. Ranh giới quyết định 2D",
-        "Hình 4.9. ROC trên tập test",
-    ])
+    paragraphs[index + 1].text = "\n".join(value for value in FIGURE_CAPTIONS.values() if value.startswith("Hình "))
     paragraphs[index + 1].alignment = WD_ALIGN_PARAGRAPH.LEFT
     index = next(i for i, p in enumerate(paragraphs) if p.text.strip() == "DANH MỤC BẢNG BIỂU")
-    paragraphs[index + 1].text = "Bảng 4.1. Kết quả trên cùng tập test Banknote."
+    paragraphs[index + 1].text = next(value for value in FIGURE_CAPTIONS.values() if value.startswith("Bảng "))
     paragraphs[index + 1].alignment = WD_ALIGN_PARAGRAPH.LEFT
     paragraphs[index + 2].text = ""
+
+    # Gán .text làm mất begin/separate của field danh mục cũ nhưng end nằm ở đoạn sau vẫn còn.
+    depth = 0
+    for char in list(document._element.body.iter(qn("w:fldChar"))):
+        kind = char.get(qn("w:fldCharType"))
+        depth += {"begin": 1, "end": -1}.get(kind, 0)
+        if depth < 0:
+            char.getparent().remove(char)
+            depth = 0
 
 
 def main() -> None:
@@ -406,50 +290,50 @@ def main() -> None:
 
     def chapter_one():
         document.add_paragraph("Lộ trình của project đi từ hình học SVM, bài toán primal và dual đến điều kiện KKT, thuật toán SMO và đánh giá trên Banknote Authentication.")
-        add_figure(document, DIAGRAMS / "overview.png", "Hình 1.1. Lộ trình nghiên cứu SVM.", width=6.1)
+        add_figure(document, DIAGRAMS / "overview.png", width=6.1)
     insert_before(document, find_paragraph(document, "Kết luận chương 1"), chapter_one)
 
     def geometry():
-        add_figure(document, ILLUSTRATIONS / "svm_geometry.png", "Hình 2.1. Siêu phẳng, hai biên và support vectors trên dữ liệu tổng hợp.", width=5.2)
+        add_figure(document, ILLUSTRATIONS / "svm_geometry.png", width=5.2)
     insert_before(document, find_paragraph(document, "Máy vector hỗ trợ lề cứng (Hard Margin SVM)"), geometry)
 
     def soft_margin():
-        document.add_paragraph("Trong code, hàm quyết định dùng quy ước wᵀx+b; quy ước này tương đương wᵀx−b trong bản nền khi đổi dấu bias. Hàm mục tiêu soft margin được viết:")
-        add_figure(document, ILLUSTRATIONS / "soft_margin.png", "Hình 2.2. Một điểm vi phạm biên với slack dương; dữ liệu tổng hợp.", width=4.6)
-        add_figure(document, ILLUSTRATIONS / "hinge_loss.png", "Hình 2.3. Hinge loss theo margin có dấu.", width=4.6)
+        document.add_paragraph("Trong code, hàm quyết định dùng quy ước $w^T x + b$; quy ước này tương đương $w^T x - b$ trong bản nền khi đổi dấu bias.")
+        add_figure(document, ILLUSTRATIONS / "soft_margin.png", width=4.6)
+        add_figure(document, ILLUSTRATIONS / "hinge_loss.png", width=4.6)
     insert_before(document, find_paragraph(document, "Phương pháp nhân tử Lagrange và bài toán đối ngẫu"), soft_margin)
 
     def kernel():
         document.add_paragraph("Hình sau so sánh Linear và RBF trên cùng dữ liệu XOR tổng hợp; đây là hình minh họa trên train, không phải kết quả Banknote.")
-        add_figure(document, ILLUSTRATIONS / "linear_rbf_xor.png", "Hình 3.1. Linear và RBF trên dữ liệu XOR tổng hợp.", width=6.0)
+        add_figure(document, ILLUSTRATIONS / "linear_rbf_xor.png", width=6.0)
     insert_before(document, find_paragraph(document, "Mở rộng SVM cho bài toán phân lớp đa lớp và hồi quy (SVR)"), kernel)
 
     # Giữ nguyên ví dụ gốc, đồng thời làm rõ kết quả tính sai trong bản nền.
     def hand_correction():
-        document.add_paragraph("Hiệu chỉnh ví dụ trên: với ba điểm đã cho và quy ước f(x)=wᵀx−b, nghiệm lề cứng là w=[1,0], b=1, lề rộng 2. Nghiệm w=[0.5,0.5], b=1 nêu trên cho f([2,0])=0 nên không thỏa ràng buộc y·f(x)≥1. Ví dụ bốn điểm khác của project được trình bày trong docs/07_hand_example.md.")
+        document.add_paragraph(r"Hiệu chỉnh ví dụ trên: với ba điểm đã cho và quy ước $f(x) = w^T x - b$, nghiệm lề cứng là $w = [1, 0]^T$, $b = 1$, lề rộng bằng $2$. Nghiệm $w = [0.5, 0.5]^T$, $b = 1$ nêu trên cho $f([2, 0]^T) = 0$ nên không thỏa ràng buộc $y_i f(x_i) \geq 1$. Ví dụ bốn điểm khác của project được trình bày trong `docs/07_hand_example.md`.")
     insert_before(document, find_paragraph(document, "Thiết lập thực nghiệm và tiền xử lý dữ liệu"), hand_correction)
 
     def setup():
-        document.add_paragraph(f"Thực nghiệm bổ sung dùng UCI Banknote Authentication: {summary['n_samples']} mẫu, {summary['n_features']} đặc trưng, train/test {summary['train_samples']}/{summary['test_samples']}, chia phân tầng với random_state={summary['random_state']}. StandardScaler chỉ fit trên train; trong cross-validation, scaler được fit lại trên train của từng fold.")
-        document.add_paragraph("SMO cập nhật hai hệ số alpha mỗi lần để giữ ràng buộc của bài toán dual:")
-        add_equation(document, r"\sum_i\alpha_i y_i=0,\qquad 0\leq\alpha_i\leq C", "(4.6)")
-        add_figure(document, DIAGRAMS / "architecture.png", "Hình 4.1. Kiến trúc module của project.", width=6.0)
-        add_figure(document, DIAGRAMS / "experiment_pipeline.png", "Hình 4.2. Pipeline thực nghiệm Banknote.", width=6.0)
-        add_figure(document, DIAGRAMS / "smo_pair_update.png", "Hình 4.3. Một vòng cập nhật cặp SMO.", width=6.0)
+        document.add_paragraph(f"Thực nghiệm bổ sung dùng UCI Banknote Authentication: {summary['n_samples']} mẫu, {summary['n_features']} đặc trưng; tập train có {summary['train_samples']} mẫu và tập test có {summary['test_samples']} mẫu, chia phân tầng với `random_state={summary['random_state']}`. StandardScaler chỉ fit trên train; trong cross-validation, scaler được fit lại trên train của từng fold.")
+        document.add_paragraph(r"SMO cập nhật hai hệ số $\alpha_i$ mỗi lần để giữ các ràng buộc của bài toán dual:")
+        document.add_paragraph(r"$$\sum_{i} \alpha_i y_i = 0,\text{ } 0 \leq \alpha_i \leq C$$")
+        add_figure(document, DIAGRAMS / "architecture.png", width=6.0)
+        add_figure(document, DIAGRAMS / "experiment_pipeline.png", width=6.0)
+        add_figure(document, DIAGRAMS / "smo_pair_update.png", width=6.0)
     insert_before(document, find_paragraph(document, "Kết quả thực nghiệm và so sánh đánh giá"), setup)
 
     def results():
         best = artifacts["best_rbf_params"]
-        document.add_paragraph(f"Kết quả bổ sung của project: RBF chọn C={best.get('svc__C')} và gamma={best.get('svc__gamma')} bằng F1 trung bình qua 5-fold trên train. Tập test giữ riêng để đánh giá sau khi chọn tham số.")
+        document.add_paragraph(f"Kết quả bổ sung của project: RBF chọn $C = {best.get('svc__C')}$ và $\\gamma = {best.get('svc__gamma')}$ bằng F1 trung bình qua 5-fold trên train. Tập test giữ riêng để đánh giá sau khi chọn tham số.")
         rows = [(r["model"], fmt(r["accuracy"]), fmt(r["precision"]), fmt(r["recall"]), fmt(r["f1"]), fmt(r["roc_auc"])) for _, r in metrics.iterrows()]
-        add_caption(document, "Bảng 4.1. Kết quả trên cùng tập test Banknote.")
+        add_caption(document, next(value for value in FIGURE_CAPTIONS.values() if value.startswith("Bảng ")))
         add_table(document, ["Mô hình", "Accuracy", "Precision", "Recall", "F1", "ROC-AUC"], rows, widths=[1.7, .85, .85, .85, .85, .85])
-        add_figure(document, FIGURES / "benchmark_metrics.png", "Hình 4.4. So sánh metrics trên tập test.", width=6.0)
-        add_figure(document, FIGURES / "benchmark_confusion_matrices.png", "Hình 4.5. Ma trận nhầm lẫn trên tập test.", width=6.0)
-        add_figure(document, FIGURES / "rbf_grid_search_heatmap.png", "Hình 4.6. F1 trung bình 5-fold CV của RBF SVC.", width=5.0)
-        add_figure(document, FIGURES / "custom_smo_convergence.png", "Hình 4.7. Lịch sử hàm mục tiêu dual của SMO.", width=5.8)
-        add_figure(document, FIGURES / "decision_boundaries_2d.png", "Hình 4.8. Ranh giới trên hai đặc trưng đầu, chỉ để minh họa.", width=6.0)
-        add_figure(document, FIGURES / "benchmark_roc.png", "Hình 4.9. ROC trên tập test.", width=5.8)
+        add_figure(document, FIGURES / "benchmark_metrics.png", width=6.0)
+        add_figure(document, FIGURES / "benchmark_confusion_matrices.png", width=6.0)
+        add_figure(document, FIGURES / "rbf_grid_search_heatmap.png", width=5.0)
+        add_figure(document, FIGURES / "custom_smo_convergence.png", width=5.8)
+        add_figure(document, FIGURES / "decision_boundaries_2d.png", width=6.0)
+        add_figure(document, FIGURES / "benchmark_roc.png", width=5.8)
     insert_before(document, find_paragraph(document, "Kết luận Chương 4"), results)
 
     def references():
@@ -462,9 +346,8 @@ def main() -> None:
             document.add_paragraph(text)
     insert_before(document, find_paragraph(document, "PHỤ LỤC"), references)
 
-    document.add_paragraph("Tái lập kết quả: chạy uv sync --locked, uv run python -m experiments.06_report_benchmark và uv run python reports/generate_docx.py từ thư mục gốc project.")
-    format_display_equations(document)
-    format_inline_math(document)
+    document.add_paragraph("Tái lập kết quả: chạy `uv sync --locked`, `uv run python -m experiments.06_report_benchmark` và `uv run python reports/generate_docx.py` từ thư mục gốc project.")
+    render_math(document)
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)
     document.save(str(OUTPUT))
     print(f"Saved: {OUTPUT}")

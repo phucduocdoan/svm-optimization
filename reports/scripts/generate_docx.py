@@ -2,9 +2,9 @@ r"""Sinh báo cáo Word theo file định dạng của cô Xuân.
 
 Chạy sau khi đã chạy benchmark:
 
-    uv run python reports/generate_docx.py
+    uv run python reports/scripts/generate_docx.py
 
-Dùng report_base.docx làm nội dung nền, giữ nguyên các chương của nhóm.
+Dùng source/report_layout.docx và source/report_content.json làm nội dung nền, giữ nguyên các chương của nhóm.
 Có thể cung cấp template khác bằng biến môi trường ``REPORT_TEMPLATE``.
 """
 
@@ -18,21 +18,25 @@ from pathlib import Path
 
 import pandas as pd
 from docx import Document
+from docx.enum.style import WD_STYLE_TYPE
 from docx.enum.table import WD_CELL_VERTICAL_ALIGNMENT
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml import OxmlElement, parse_xml
 from docx.oxml.ns import qn
 from docx.shared import Cm, Inches, Pt
-from report_math import render_math
+from report_math import CODE_STYLE, chapter_heading, render_math
 
-ROOT = Path(__file__).resolve().parents[1]
-OUTPUT = ROOT / "reports" / "svm_optimization_report.docx"
-TEMPLATE = Path(os.environ.get("REPORT_TEMPLATE", ROOT / "reports" / "report_layout.docx"))
-CONTENT = ROOT / "reports" / "report_content.json"
+ROOT = Path(__file__).resolve().parents[2]
+SOURCE = ROOT / "reports" / "source"
+OUTPUT = ROOT / "reports" / "output" / "svm_optimization_report.docx"
+TEMPLATE = Path(os.environ.get("REPORT_TEMPLATE", SOURCE / "report_layout.docx"))
+CONTENT = SOURCE / "report_content.json"
+ADDITIONS = SOURCE / "report_additions.md"
 DATA = ROOT / "reports" / "data"
 FIGURES = ROOT / "reports" / "figures"
 ILLUSTRATIONS = ROOT / "docs" / "images" / "scientific"
 DIAGRAMS = ROOT / "docs" / "diagrams"
+CODE_FONT = "Consolas"
 
 
 def set_cell_text(cell, text: str, bold: bool = False) -> None:
@@ -61,39 +65,46 @@ def add_field(paragraph, instruction: str) -> None:
     run._r.extend([begin, instr, separate, placeholder, end])
 
 
-def add_caption(document: Document, text: str) -> None:
+def add_caption(document: Document, text: str):
     p = document.add_paragraph(style="Caption" if "Caption" in [s.name for s in document.styles] else "Content")
     p.alignment = WD_ALIGN_PARAGRAPH.CENTER
     p.add_run(text)
+    return p
 
 
-FIGURE_CAPTIONS = {row.split("|", 2)[1].strip(" |\t"): row.split("|", 2)[2].strip(" |\t") for row in (ROOT / "reports" / "figure_captions.md").read_text(encoding="utf-8").splitlines() if row.startswith("|") and not row.startswith("| File")}
+FIGURE_CAPTIONS = {row.split("|", 2)[1].strip(" |\t"): row.split("|", 2)[2].strip(" |\t") for row in (SOURCE / "figure_captions.md").read_text(encoding="utf-8").splitlines() if row.startswith("|") and not row.startswith("| File")}
 
 
-def figure_caption(path: Path, fallback: str | None = None) -> str:
-    configured = FIGURE_CAPTIONS.get(path.name) or next((value for name, value in FIGURE_CAPTIONS.items() if Path(name).stem == path.stem), None)
-    for markdown in (ROOT / "docs").glob("*.md"):
+def figure_caption(path: Path) -> str:
+    """Chú thích lấy từ dòng *Hình N: …* trong docs; hình không có trong docs lấy từ figure_captions.md."""
+    for markdown in sorted((ROOT / "docs").glob("*.md")):
         lines = markdown.read_text(encoding="utf-8").splitlines()
         for index, line in enumerate(lines[:-1]):
             if re.search(r"!\[[^]]*\]\([^)]*/" + re.escape(path.stem) + r"\.(?:svg|png)\)", line):
                 caption_line = next((value.strip().strip("*") for value in lines[index + 1:index + 5] if value.strip().startswith("*Hình ")), "")
-                description = caption_line.split(":", 1)[-1].strip() if caption_line.startswith("Hình ") else caption_line
-                if configured:
-                    label_match = re.match(r"^(?:Hình|Bảng)\s+\d+(?:\.\d+)*\.", configured)
-                    label = label_match.group(0) if label_match else ""
-                    return f"{label} {description}" if description else configured
-                return description
-    return configured or fallback or path.stem.replace("_", " ").capitalize()
+                if caption_line:
+                    return caption_line.split(":", 1)[-1].strip()
+    configured = next((value for name, value in FIGURE_CAPTIONS.items() if Path(name).stem == path.stem), None)
+    if configured is None:
+        raise ValueError(f"Thiếu chú thích cho hình {path.name} trong docs hoặc figure_captions.md")
+    return configured
 
 
-def add_figure(document: Document, path: Path, caption: str | None = None, width: float = 6.1) -> None:
+def add_figure(document: Document, path: Path, width: float = 6.1) -> None:
     if not path.exists():
         raise FileNotFoundError(f"Thiếu hình: {path}")
     p = document.add_paragraph()
     p.alignment = WD_ALIGN_PARAGRAPH.CENTER
     p.paragraph_format.keep_with_next = True
     p.add_run().add_picture(str(path), width=Inches(width))
-    add_caption(document, figure_caption(path, caption))
+    add_caption(document, figure_caption(path))
+
+
+def add_code(document: Document, code: str) -> None:
+    p = document.add_paragraph(style=CODE_STYLE)
+    run = p.add_run(code)  # "\n" thành ngắt dòng trong cùng một khối
+    run.font.name = CODE_FONT
+    run._element.rPr.rFonts.set(qn("w:hAnsi"), CODE_FONT)
 
 
 def add_table(document: Document, headers, rows, widths=None):
@@ -154,6 +165,24 @@ def configure_styles(document: Document) -> None:
         style.paragraph_format.line_spacing = 1.5
         style.paragraph_format.space_before = Pt(10 if name == "Heading 1" else 6)
         style.paragraph_format.space_after = Pt(6)
+    if CODE_STYLE not in [style.name for style in document.styles]:
+        document.styles.add_style(CODE_STYLE, WD_STYLE_TYPE.PARAGRAPH)
+    code = document.styles[CODE_STYLE]
+    code.base_style = document.styles["Normal"]
+    code.font.name = CODE_FONT
+    code.font.size = Pt(10)
+    code.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.LEFT
+    code.paragraph_format.line_spacing = 1.0
+    code.paragraph_format.first_line_indent = Cm(0)
+    code.paragraph_format.left_indent = Cm(0.5)
+    code.paragraph_format.space_after = Pt(8)
+    code.paragraph_format.keep_together = True
+    shading = code._element.get_or_add_pPr().find(qn("w:shd"))
+    if shading is None:
+        shading = OxmlElement("w:shd")
+        code._element.get_or_add_pPr().append(shading)
+    shading.set(qn("w:val"), "clear")
+    shading.set(qn("w:fill"), "F2F2F2")
     caption = document.styles["Caption"]
     caption.font.italic = True
     caption.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -232,6 +261,99 @@ def merge_base_content(document: Document) -> None:
         anchor._p.addprevious(parse_xml(record["xml"].encode("utf-8")))
 
 
+IMAGE = re.compile(r"^!\[[^]]*\]\(([^)]+)\)(?:\{width=([\d.]+)\})?$")
+TABLE_CAPTION = re.compile(r"^\*Bảng:\s*(.+)\*$")
+
+
+def add_text(document: Document, text: str) -> None:
+    """Đoạn văn Markdown: **đậm**, [liên kết](url) giữ chữ; toán và `code` để render_math xử lý."""
+    text = re.sub(r"\[([^]]+)\]\([^)]+\)", r"\1", text)
+    p = document.add_paragraph()
+    for index, part in enumerate(re.split(r"\*\*(.+?)\*\*", text)):
+        if part:
+            p.add_run(part).bold = index % 2 == 1
+
+
+def add_markdown(document: Document, text: str, base: Path) -> None:
+    """Chèn các khối Markdown: đoạn văn, $$công thức$$, hình, bảng (có *Bảng: …* phía trên) và khối code."""
+    lines = text.splitlines()
+    i = 0
+    while i < len(lines):
+        if not lines[i].strip():
+            i += 1
+            continue
+        if lines[i].startswith("```"):
+            end = next(k for k in range(i + 1, len(lines)) if lines[k].startswith("```"))
+            add_code(document, "\n".join(lines[i + 1:end]))
+            i = end + 1
+            continue
+        end = i
+        while end < len(lines) and lines[end].strip() and not lines[end].startswith("```"):
+            end += 1
+        block = [line.strip() for line in lines[i:end]]
+        i = end
+        if TABLE_CAPTION.match(block[0]):
+            add_caption(document, TABLE_CAPTION.match(block[0]).group(1)).paragraph_format.keep_with_next = True
+            block = block[1:]
+        image = IMAGE.match(block[0]) if len(block) == 1 else None
+        if image:
+            add_figure(document, (base / image.group(1)).resolve(), width=float(image.group(2) or 6.0))
+        elif block and block[0].startswith("|"):
+            rows = [[cell.strip() for cell in line.strip("|").split("|")] for line in block]
+            add_table(document, rows[0], rows[2:])
+        elif block:
+            add_text(document, " ".join(block))
+
+
+def insert_additions(document: Document) -> None:
+    """Mỗi mục `## Trước: <tiêu đề>` của report_additions.md được chèn ngay trước tiêu đề đó."""
+    sections = re.split(r"^## Trước: (.+)$", ADDITIONS.read_text(encoding="utf-8"), flags=re.MULTILINE)
+    for anchor, text in zip(sections[1::2], sections[2::2]):
+        insert_before(document, find_paragraph(document, anchor.strip()), lambda text=text: add_markdown(document, text, ADDITIONS.parent))
+
+
+def number_captions(document: Document) -> None:
+    """Đánh số Hình/Bảng theo chương (c.n) theo thứ tự xuất hiện, rồi dựng lại hai danh mục."""
+    chapter, counts, found = None, {}, {"Hình": [], "Bảng": []}
+    for paragraph in document.paragraphs:
+        heading = chapter_heading(paragraph)
+        if heading is not None:
+            chapter, counts = ((chapter or 0) + 1 if heading else None), {}
+        if paragraph.style.name != "Caption":
+            continue
+        previous, following = paragraph._p.getprevious(), paragraph._p.getnext()
+        if previous is not None and previous.findall(".//" + qn("w:drawing")):
+            kind = "Hình"
+        elif following is not None and following.tag == qn("w:tbl"):
+            kind = "Bảng"
+        else:
+            raise ValueError(f"Chú thích không đứng sau hình hay trước bảng: {paragraph.text!r}")
+        if chapter is None:
+            raise ValueError(f"Chú thích nằm ngoài chương được đánh số: {paragraph.text!r}")
+        counts[kind] = counts.get(kind, 0) + 1
+        paragraph.runs[0].text = f"{kind} {chapter}.{counts[kind]}. " + paragraph.runs[0].text
+        found[kind].append(paragraph.text)
+
+    # Danh mục trong bản nền còn là ví dụ từ template, với bookmark không tồn tại.
+    paragraphs = document.paragraphs
+    index = next(i for i, p in enumerate(paragraphs) if p.text.strip() == "DANH MỤC CÁC HÌNH ẢNH")
+    paragraphs[index + 1].text = "\n".join(found["Hình"])
+    paragraphs[index + 1].alignment = WD_ALIGN_PARAGRAPH.LEFT
+    index = next(i for i, p in enumerate(paragraphs) if p.text.strip() == "DANH MỤC BẢNG BIỂU")
+    paragraphs[index + 1].text = "\n".join(found["Bảng"])
+    paragraphs[index + 1].alignment = WD_ALIGN_PARAGRAPH.LEFT
+    paragraphs[index + 2].text = ""
+
+    # Gán .text làm mất begin/separate của field danh mục cũ nhưng end nằm ở đoạn sau vẫn còn.
+    depth = 0
+    for char in list(document._element.body.iter(qn("w:fldChar"))):
+        kind = char.get(qn("w:fldCharType"))
+        depth += {"begin": 1, "end": -1}.get(kind, 0)
+        if depth < 0:
+            char.getparent().remove(char)
+            depth = 0
+
+
 def refresh_toc(document: Document) -> None:
     # Trường TOC trong file nhóm có cache từ một đề án khác; làm mới field,
     # giữ nguyên các chương và các đoạn nội dung của nhóm.
@@ -252,25 +374,6 @@ def refresh_toc(document: Document) -> None:
         settings.append(update)
     update.set(qn("w:val"), "true")
 
-    # Danh mục trong bản nền còn là ví dụ từ template, với bookmark không tồn tại.
-    paragraphs = document.paragraphs
-    index = next(i for i, p in enumerate(paragraphs) if p.text.strip() == "DANH MỤC CÁC HÌNH ẢNH")
-    paragraphs[index + 1].text = "\n".join(value for value in FIGURE_CAPTIONS.values() if value.startswith("Hình "))
-    paragraphs[index + 1].alignment = WD_ALIGN_PARAGRAPH.LEFT
-    index = next(i for i, p in enumerate(paragraphs) if p.text.strip() == "DANH MỤC BẢNG BIỂU")
-    paragraphs[index + 1].text = next(value for value in FIGURE_CAPTIONS.values() if value.startswith("Bảng "))
-    paragraphs[index + 1].alignment = WD_ALIGN_PARAGRAPH.LEFT
-    paragraphs[index + 2].text = ""
-
-    # Gán .text làm mất begin/separate của field danh mục cũ nhưng end nằm ở đoạn sau vẫn còn.
-    depth = 0
-    for char in list(document._element.body.iter(qn("w:fldChar"))):
-        kind = char.get(qn("w:fldCharType"))
-        depth += {"begin": 1, "end": -1}.get(kind, 0)
-        if depth < 0:
-            char.getparent().remove(char)
-            depth = 0
-
 
 def main() -> None:
     if not TEMPLATE.exists():
@@ -280,7 +383,7 @@ def main() -> None:
         raise FileNotFoundError("Chưa có benchmark. Chạy: uv run python -m experiments.06_report_benchmark")
     metrics = pd.read_csv(metrics_path)
     summary = json.loads((DATA / "dataset_summary.json").read_text(encoding="utf-8"))
-    artifacts = json.loads((ROOT / "reports" / "benchmark_artifacts.json").read_text(encoding="utf-8"))
+    artifacts = json.loads((DATA / "benchmark_artifacts.json").read_text(encoding="utf-8"))
     document = Document(str(TEMPLATE))
     merge_base_content(document)
     configure_styles(document)
@@ -288,45 +391,16 @@ def main() -> None:
     add_cover(document)
     document.core_properties.title = "Nghiên cứu SVM dưới góc nhìn tối ưu hóa"
 
-    def chapter_one():
-        document.add_paragraph("Lộ trình của project đi từ hình học SVM, bài toán primal và dual đến điều kiện KKT, thuật toán SMO và đánh giá trên Banknote Authentication.")
-        add_figure(document, DIAGRAMS / "overview.png", width=6.1)
-    insert_before(document, find_paragraph(document, "Kết luận chương 1"), chapter_one)
-
-    def geometry():
-        add_figure(document, ILLUSTRATIONS / "svm_geometry.png", width=5.2)
-    insert_before(document, find_paragraph(document, "Máy vector hỗ trợ lề cứng (Hard Margin SVM)"), geometry)
-
-    def soft_margin():
-        document.add_paragraph("Trong code, hàm quyết định dùng quy ước $w^T x + b$; quy ước này tương đương $w^T x - b$ trong bản nền khi đổi dấu bias.")
-        add_figure(document, ILLUSTRATIONS / "soft_margin.png", width=4.6)
-        add_figure(document, ILLUSTRATIONS / "hinge_loss.png", width=4.6)
-    insert_before(document, find_paragraph(document, "Phương pháp nhân tử Lagrange và bài toán đối ngẫu"), soft_margin)
-
-    def kernel():
-        document.add_paragraph("Hình sau so sánh Linear và RBF trên cùng dữ liệu XOR tổng hợp; đây là hình minh họa trên train, không phải kết quả Banknote.")
-        add_figure(document, ILLUSTRATIONS / "linear_rbf_xor.png", width=6.0)
-    insert_before(document, find_paragraph(document, "Mở rộng SVM cho bài toán phân lớp đa lớp và hồi quy (SVR)"), kernel)
-
-    # Giữ nguyên ví dụ gốc, đồng thời làm rõ kết quả tính sai trong bản nền.
-    def hand_correction():
-        document.add_paragraph(r"Hiệu chỉnh ví dụ trên: với ba điểm đã cho và quy ước $f(x) = w^T x - b$, nghiệm lề cứng là $w = [1, 0]^T$, $b = 1$, lề rộng bằng $2$. Nghiệm $w = [0.5, 0.5]^T$, $b = 1$ nêu trên cho $f([2, 0]^T) = 0$ nên không thỏa ràng buộc $y_i f(x_i) \geq 1$. Ví dụ bốn điểm khác của project được trình bày trong `docs/07_hand_example.md`.")
-    insert_before(document, find_paragraph(document, "Thiết lập thực nghiệm và tiền xử lý dữ liệu"), hand_correction)
-
+    # Nội dung phụ thuộc dữ liệu benchmark; nội dung tĩnh nằm trong source/report_additions.md.
     def setup():
         document.add_paragraph(f"Thực nghiệm bổ sung dùng UCI Banknote Authentication: {summary['n_samples']} mẫu, {summary['n_features']} đặc trưng; tập train có {summary['train_samples']} mẫu và tập test có {summary['test_samples']} mẫu, chia phân tầng với `random_state={summary['random_state']}`. StandardScaler chỉ fit trên train; trong cross-validation, scaler được fit lại trên train của từng fold.")
-        document.add_paragraph(r"SMO cập nhật hai hệ số $\alpha_i$ mỗi lần để giữ các ràng buộc của bài toán dual:")
-        document.add_paragraph(r"$$\sum_{i} \alpha_i y_i = 0,\text{ } 0 \leq \alpha_i \leq C$$")
-        add_figure(document, DIAGRAMS / "architecture.png", width=6.0)
-        add_figure(document, DIAGRAMS / "experiment_pipeline.png", width=6.0)
-        add_figure(document, DIAGRAMS / "smo_pair_update.png", width=6.0)
     insert_before(document, find_paragraph(document, "Kết quả thực nghiệm và so sánh đánh giá"), setup)
 
     def results():
         best = artifacts["best_rbf_params"]
         document.add_paragraph(f"Kết quả bổ sung của project: RBF chọn $C = {best.get('svc__C')}$ và $\\gamma = {best.get('svc__gamma')}$ bằng F1 trung bình qua 5-fold trên train. Tập test giữ riêng để đánh giá sau khi chọn tham số.")
         rows = [(r["model"], fmt(r["accuracy"]), fmt(r["precision"]), fmt(r["recall"]), fmt(r["f1"]), fmt(r["roc_auc"])) for _, r in metrics.iterrows()]
-        add_caption(document, next(value for value in FIGURE_CAPTIONS.values() if value.startswith("Bảng ")))
+        add_caption(document, FIGURE_CAPTIONS["results_table"]).paragraph_format.keep_with_next = True
         add_table(document, ["Mô hình", "Accuracy", "Precision", "Recall", "F1", "ROC-AUC"], rows, widths=[1.7, .85, .85, .85, .85, .85])
         add_figure(document, FIGURES / "benchmark_metrics.png", width=6.0)
         add_figure(document, FIGURES / "benchmark_confusion_matrices.png", width=6.0)
@@ -336,17 +410,9 @@ def main() -> None:
         add_figure(document, FIGURES / "benchmark_roc.png", width=5.8)
     insert_before(document, find_paragraph(document, "Kết luận Chương 4"), results)
 
-    def references():
-        for text in [
-            "Cortes, C. & Vapnik, V. (1995). Support-Vector Networks. Machine Learning, 20, 273–297.",
-            "Platt, J. (1998). Sequential Minimal Optimization: A Fast Algorithm for Training Support Vector Machines. MSR-TR-98-14.",
-            "Chang, C.-C. & Lin, C.-J. (2011). LIBSVM: A Library for Support Vector Machines.",
-            "UCI Banknote Authentication: https://archive.ics.uci.edu/dataset/267/banknote+authentication",
-        ]:
-            document.add_paragraph(text)
-    insert_before(document, find_paragraph(document, "PHỤ LỤC"), references)
-
-    document.add_paragraph("Tái lập kết quả: chạy `uv sync --locked`, `uv run python -m experiments.06_report_benchmark` và `uv run python reports/generate_docx.py` từ thư mục gốc project.")
+    insert_additions(document)
+    number_captions(document)
+    document.add_paragraph("Tái lập kết quả: chạy `uv sync --locked`, `uv run python -m experiments.06_report_benchmark` và `uv run python reports/scripts/generate_docx.py` từ thư mục gốc project.")
     render_math(document)
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)
     document.save(str(OUTPUT))

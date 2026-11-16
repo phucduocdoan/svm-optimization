@@ -128,12 +128,18 @@ uv run pytest -q
 
 ### Tạo lại báo cáo Word
 
-Nguồn báo cáo được tách thành `reports/report_layout.docx` (layout Word) và `reports/report_content.json` (các đoạn nội dung cùng định dạng gốc); bản text dễ đọc nằm ở `reports/report_content.md`. `reports/report_base.docx` được giữ nguyên làm bản lưu đối chiếu. Generator ghép layout và nội dung trước khi chèn hình, kết quả và công thức.
+Thư mục `reports/` được nhóm theo chức năng:
+
+- `reports/source/`: nguồn báo cáo. `report_layout.docx` (layout Word), `report_content.json` (các đoạn nội dung của nhóm cùng định dạng gốc; bản text dễ đọc là `report_content.md`), `report_additions.md` (nội dung bổ sung: ví dụ, bảng, hình minh họa, khối code, mỗi mục `## Trước: <tiêu đề>` được chèn ngay trước tiêu đề đó) và `figure_captions.md` (chú thích cho hình không có trong docs). `report_base.docx` được giữ nguyên làm bản lưu đối chiếu.
+- `reports/scripts/`: `generate_docx.py` (ghép layout, nội dung, hình, kết quả; đánh số hình/bảng theo chương và dựng lại hai danh mục), `report_math.py` (chuyển toán sang Word math), `check_math.py` (kiểm tra độc lập công thức, chú thích và nội dung gốc).
+- `reports/data/`: số liệu thực nghiệm (JSON, CSV) mà báo cáo đọc vào.
+- `reports/figures/`: biểu đồ kết quả thực nghiệm.
+- `reports/output/`: file Word được sinh ra.
 
 ```bash
 uv run python -m experiments.06_report_benchmark
-uv run python reports/check_math.py
-uv run python reports/generate_docx.py
+uv run python reports/scripts/generate_docx.py
+uv run python reports/scripts/check_math.py
 ```
 
 Mở báo cáo trong Word, chọn mục lục và nhấn F9 để cập nhật số trang. Để dùng bản nền khác có cùng các tiêu đề, đặt biến môi trường `REPORT_TEMPLATE` thành đường dẫn của file đó.
@@ -184,7 +190,12 @@ svm_optimization_project/
 ├── experiments/                   # Các chương trình chạy theo chặng
 ├── tests/                         # Unit tests
 ├── data/banknote/                 # Cache dataset tải về
-└── reports/                       # Biểu đồ, bảng kết quả được sinh ra
+└── reports/
+    ├── source/                    # Layout, nội dung, phần bổ sung, chú thích của báo cáo
+    ├── scripts/                   # Sinh DOCX, chuyển toán, kiểm tra
+    ├── data/                      # Số liệu thực nghiệm
+    ├── figures/                   # Biểu đồ kết quả
+    └── output/                    # Báo cáo Word được sinh ra
 ```
 
 ## 9. Giới hạn cần ghi rõ trong báo cáo

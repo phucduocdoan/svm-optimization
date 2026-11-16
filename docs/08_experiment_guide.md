@@ -96,6 +96,28 @@ Giữ split cố định, chuẩn hóa dữ liệu, thử kernel Linear và RBF.
 
 Script `04_compare_C_kernel.py` hiện là script khảo sát nhạy cảm đơn giản trên cùng test set. Không dùng bảng này để tuyên bố cấu hình tốt nhất tổng quát; báo cáo chính thức nên bổ sung GridSearchCV hoặc cross-validation.
 
+```python
+from sklearn.model_selection import GridSearchCV, train_test_split
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler
+from sklearn.svm import SVC
+from svm_optimization.data import load_banknote
+
+X, y = load_banknote()
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42, stratify=y)
+pipe = make_pipeline(StandardScaler(), SVC(kernel='rbf'))
+grid = {'svc__C': [0.1, 1, 10], 'svc__gamma': [0.01, 0.1, 1]}
+search = GridSearchCV(pipe, grid, cv=5).fit(X_train, y_train)
+print('best params', search.best_params_)
+print('best cv score', round(search.best_score_, 4))
+print('test score', round(search.score(X_test, y_test), 4))
+# best params {'svc__C': 10, 'svc__gamma': 0.1}
+# best cv score 1.0
+# test score 1.0
+```
+
+Scaler và `GridSearchCV` nằm trong cùng một `Pipeline`: mỗi fold CV fit lại `StandardScaler` chỉ trên phần train của fold đó, đúng nguyên tắc "scaler chỉ fit trên train" ở trên. Banknote tách gần như tuyến tính nên cả Linear lẫn RBF đã điều chỉnh đều có thể đạt accuracy rất cao trên tập này; đừng suy diễn RBF luôn thắng nhờ con số 1.0 trên dataset khác.
+
 ## 7. Phần tối ưu hóa cần được báo cáo
 
 Đây là môn Tối ưu hóa, do đó nên có các kết quả sau ngoài metrics phân loại:

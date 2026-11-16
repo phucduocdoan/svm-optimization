@@ -21,5 +21,5 @@ where = ["src"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-pythonpath = ["src", "reports"]
+pythonpath = ["src", "reports/scripts"]
 addopts = "-ra"

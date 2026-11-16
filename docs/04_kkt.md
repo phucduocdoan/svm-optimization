@@ -58,7 +58,7 @@ Hình dưới vẽ trục $\alpha_i$ từ 0 đến $C$ theo đúng ba hàng củ
 
 ![Trục số alpha_i chia ba vùng theo điều kiện KKT](images/scientific/kkt_alpha_number_line.svg)
 
-*Hình 4.1: Ba vùng của $\alpha_i$ trên $[0,C]$; các mốc $\alpha_1=\alpha_2=0.25$ và $\alpha_3=\alpha_4=0$ lấy từ ví dụ giải tay ở mục 4.*
+*Hình 4.1: Ba vùng của $\alpha_i$ trên $[0,C]$; các mốc $\alpha_1=\alpha_2=0.25$ và $\alpha_3=\alpha_4=0$ lấy từ ví dụ giải tay bốn điểm.*
 
 **Cẩn thận:** ở trường hợp suy biến, có thể có điểm nằm trên biên nhưng alpha bằng 0. Bảng trên là cách diễn giải điển hình, không nên biến thành khẳng định tuyệt đối cho mọi bộ dữ liệu.
 

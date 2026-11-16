@@ -38,6 +38,26 @@ Thử với số cụ thể $x=(1,2)$, $z=(3,4)$: $x^Tz=1\times3+2\times4=11$ n�
 
 *Ý tưởng minh họa tham khảo từ Phạm Đình Khanh, Machine Learning Algorithms to Practice, ch. 7 SVM: [phamdinhkhanh.github.io/deepai-book/ch_ml/SVM.html](https://phamdinhkhanh.github.io/deepai-book/ch_ml/SVM.html).*
 
+Với bậc cao hơn, dựng $\phi(x)$ tường minh rồi dùng Linear SVM trên đó vẫn cho cùng ý tưởng như `SVC(kernel='poly')`, nhưng tốn kém hơn vì số chiều của $\phi(x)$ tăng rất nhanh theo bậc và số đặc trưng gốc:
+
+```python
+from sklearn.datasets import make_moons
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import PolynomialFeatures, StandardScaler
+from sklearn.svm import LinearSVC, SVC
+
+X, y = make_moons(n_samples=200, noise=0.15, random_state=1)
+poly_pipe = make_pipeline(StandardScaler(), PolynomialFeatures(degree=3), LinearSVC(C=1, max_iter=20000))
+svc_poly = make_pipeline(StandardScaler(), SVC(kernel='poly', degree=3, C=1))
+poly_pipe.fit(X, y); svc_poly.fit(X, y)
+print('PolynomialFeatures + LinearSVC:', round(poly_pipe.score(X, y), 4))
+print('SVC(kernel=poly):              ', round(svc_poly.score(X, y), 4))
+# PolynomialFeatures + LinearSVC: 0.99
+# SVC(kernel=poly):               0.875
+```
+
+Hai cách cho độ chính xác khác nhau vì chúng không dùng cùng một không gian đặc trưng: `PolynomialFeatures(degree=3)` giữ mọi đơn thức bậc 0 đến 3, còn `SVC(kernel='poly')` mặc định `coef0=0` nên kernel $(\gamma x^Tz)^3$ chỉ ứng với các đơn thức bậc đúng 3. Ngoài ra `LinearSVC` mặc định dùng squared hinge loss thay cho hinge loss.
+
 ## 3. RBF / Gaussian Kernel
 
 RBF có thể hiểu như một phép đo "giống nhau" giữa $x$ và một điểm mốc (landmark) $l$: nếu $x$ rất gần $l$, giá trị kernel gần $1$; nếu $x$ ở xa $l$, giá trị gần $0$. Ánh xạ một điểm sang các giá trị giống-nhau với vài landmark như vậy có thể biến dữ liệu kiểu XOR — vốn không tách được bằng một đường thẳng trong không gian gốc — thành dữ liệu tách được tuyến tính trong không gian mới.
@@ -54,6 +74,12 @@ Ví dụ số trên bốn đỉnh XOR $(0,0),(1,1)$ thuộc lớp $-1$ và $(0,1
 Hai điểm lớp $-1$ có $f_1+f_2\approx1.135$, hai điểm lớp $+1$ có $f_1+f_2\approx0.736$: một ngưỡng đơn giản như $f_1+f_2=0.9$ đã tách được hai lớp, dù trong không gian $(x_1,x_2)$ gốc XOR không tách được bằng đường thẳng nào.
 
 *Ý tưởng minh họa tham khảo từ Phạm Đình Khanh, Machine Learning Algorithms to Practice, ch. 7 SVM: [phamdinhkhanh.github.io/deepai-book/ch_ml/SVM.html](https://phamdinhkhanh.github.io/deepai-book/ch_ml/SVM.html).*
+
+Một ví dụ 1D làm rõ hơn vai trò của landmark: bảy điểm nằm xen kẽ trên một trục nên không một ngưỡng nào trên $x$ tách được hai lớp.
+
+![Hai đường cong kernel quanh hai landmark và không gian đặc trưng (φ1,φ2) tương ứng](images/scientific/rbf_landmarks.svg)
+
+*Hình 5: Bảy điểm 1D với hai landmark $l_1=-1.5$, $l_2=1.5$, $\gamma=1$. Bên trái: giá trị kernel $\phi_1=K(x,l_1)$ và $\phi_2=K(x,l_2)$ theo $x$ — các điểm lớp $-1$ (chấm xanh) đều gần một trong hai landmark, còn các điểm lớp $+1$ (tam giác đỏ) nằm xa cả hai. Bên phải: trong không gian $(\phi_1,\phi_2)$, đường thẳng $\phi_1+\phi_2=0.5$ tách sạch hai lớp, dù trên trục $x$ ban đầu chúng xen kẽ nhau.*
 
 $$
 K(x,z)=\exp(-\gamma\|x-z\|^2),\qquad \gamma>0\qquad\text{(6.3)}
@@ -114,7 +140,36 @@ uv run python -m experiments.07_kernel_trick
 - Với RBF, không có vector w hữu hạn trong không gian đầu vào gốc để vẽ trực tiếp như Linear.
 - Khi vẽ boundary 2D, hãy huấn luyện lại trên đúng hai feature; không lấy model bốn feature rồi đưa hai feature vào plot.
 
-## 7. Bạn cần tự trả lời
+## 7. So sánh bốn kernel bằng cross-validation
+
+Mục 2 và 3 so sánh kernel trên ví dụ nhỏ, dựng sẵn để minh họa. Trên dữ liệu thực, cách công bằng hơn là so sánh accuracy qua nhiều lần cross-validation thay vì nhìn một lần chia train/test.
+
+![Boxplot accuracy cross-validation của 4 kernel trên make_moons](images/scientific/kernel_comparison_moons.svg)
+
+*Hình 6: Accuracy của `SVC` (chuẩn hóa bằng `StandardScaler`, tham số mặc định ngoài kernel) qua 50 lần Repeated Stratified 5-fold CV trên `make_moons` (200 mẫu, nhiễu 0.25). RBF có accuracy trung bình cao nhất (0.924), sigmoid thấp nhất (0.716).*
+
+```python
+from sklearn.datasets import make_moons
+from sklearn.model_selection import RepeatedStratifiedKFold, cross_val_score
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler
+from sklearn.svm import SVC
+
+X, y = make_moons(n_samples=200, noise=0.25, random_state=0)
+cv = RepeatedStratifiedKFold(n_splits=5, n_repeats=10, random_state=0)
+for kernel in ['linear', 'poly', 'rbf', 'sigmoid']:
+    pipe = make_pipeline(StandardScaler(), SVC(kernel=kernel, gamma='scale'))
+    scores = cross_val_score(pipe, X, y, cv=cv)
+    print(kernel, round(scores.mean(), 4), round(scores.std(), 4))
+# linear  0.833 0.0542
+# poly    0.828 0.0486
+# rbf     0.924 0.0371
+# sigmoid 0.716 0.0655
+```
+
+Kết quả này chỉ đúng cho `make_moons` với nhiễu và kích thước đã chọn; trên dữ liệu khác (ví dụ Banknote, gần tuyến tính) kernel linear có thể thắng RBF. Luôn so sánh bằng cross-validation trên chính dữ liệu đang xét, không suy ra từ ví dụ này.
+
+## 8. Bạn cần tự trả lời
 
 1. Kernel thay thế phần nào trong Dual?
 2. Vì sao cần scale dữ liệu trước RBF?

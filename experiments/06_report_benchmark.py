@@ -289,7 +289,7 @@ def main() -> None:
             "converged": custom.optimizer_.converged_,
         },
     }
-    (REPORTS / "benchmark_artifacts.json").write_text(
+    (DATA_OUT / "benchmark_artifacts.json").write_text(
         json.dumps(artifacts, ensure_ascii=False, indent=2, default=str), encoding="utf-8"
     )
 

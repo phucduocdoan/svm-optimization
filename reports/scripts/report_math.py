@@ -439,6 +439,7 @@ LABEL = re.compile(r"\s*\(\d+(?:\.\d+)+\)\s*$")
 REMARK = re.compile(r"\s*\([^()]*\)\s*$")
 CONNECTORS = {"": "", ",": r",\text{ }", "và": r"\text{ và }", ", và": r",\text{ và }"}
 PROSE_STYLES = ("Heading", "Caption", "TOC")
+CODE_STYLE = "Code"  # khối code giữ nguyên, không dò toán
 
 
 @dataclass
@@ -580,7 +581,7 @@ def _new_paragraph(pPr, equation: bool, width):
     return p
 
 
-def _chapter_heading(paragraph) -> bool | None:
+def chapter_heading(paragraph) -> bool | None:
     """True: chương được đánh số; False: mục không số (Kết luận, Tài liệu...)."""
     if paragraph.style.name != "Heading 1":
         return None
@@ -594,52 +595,66 @@ def render_math(document) -> None:
     width = section.page_width - section.left_margin - section.right_margin
     chapter, count = None, 0
     for paragraph in list(document.paragraphs):
-        heading = _chapter_heading(paragraph)
+        heading = chapter_heading(paragraph)
         if heading is not None:
             chapter, count = ((chapter or 0) + 1 if heading else None), 0
-        text = paragraph.text
-        spans = find_math(text)
-        if not spans:
-            continue
-        runs = _runs(paragraph)
-        displays, cut = [], len(text)
-        if chapter is None and any(s.explicit == "display" for s in spans):
-            raise ValueError(f"Công thức khối nằm ngoài chương được đánh số: {text!r}")
-        if chapter is not None and not paragraph.style.name.startswith(PROSE_STYLES):
-            block, cut = _block(text, spans)
-            displays = [block] if block else _inline_displays(text, spans)
-        items, cursor = [], 0
-        for display in displays:
-            items += [("text", *_strip(text, cursor, display.start)), ("equation", display)]
-            cursor = display.remark[1] if display.remark else display.end
-        items.append(("text", *_strip(text, cursor, cut)))
-        items = [item for item in items if item[0] == "equation" or item[1] < item[2]]
+        count = _render_paragraph(paragraph, chapter, count, width)
+    # Ô bảng chỉ có toán inline.
+    for table in document.tables:
+        for row in table.rows:
+            for cell in row.cells:
+                for paragraph in cell.paragraphs:
+                    _render_paragraph(paragraph, None, 0, width)
 
-        p = paragraph._p
-        pPr = deepcopy(p.pPr) if p.pPr is not None else None
-        for child in p.findall(qn("w:r")):
-            p.remove(child)
-        previous = None
-        for kind, *args in items:
-            if previous is None:
-                target = p
-                if kind == "equation":
-                    if p.pPr is not None:
-                        p.remove(p.pPr)
-                    p.insert(0, _new_paragraph(pPr, True, width).pPr)
-            else:
-                target = _new_paragraph(pPr, kind == "equation", width)
-                previous.addnext(target)
-            previous = target
-            if kind == "text":
-                _emit(target, text, *args, spans, runs)
-                continue
-            display = args[0]
-            count += 1
-            rpr = next((rpr for start, end, rpr in runs if start <= display.start < end), None)
-            target.append(_text_run("\t", rpr))
-            target.append(omml(display.latex))
-            if display.remark:
-                target.append(_text_run(" ", rpr))
-                _emit(target, text, *display.remark, spans, runs)
-            target.append(_text_run(f"\t({chapter}.{count})", rpr))
+
+def _render_paragraph(paragraph, chapter: int | None, count: int, width) -> int:
+    """Dựng lại một đoạn có toán; trả về số công thức khối đã đánh trong chương."""
+    if paragraph.style.name == CODE_STYLE:
+        return count
+    text = paragraph.text
+    spans = find_math(text)
+    if not spans:
+        return count
+    runs = _runs(paragraph)
+    displays, cut = [], len(text)
+    if chapter is None and any(s.explicit == "display" for s in spans):
+        raise ValueError(f"Công thức khối nằm ngoài chương được đánh số: {text!r}")
+    if chapter is not None and not paragraph.style.name.startswith(PROSE_STYLES):
+        block, cut = _block(text, spans)
+        displays = [block] if block else _inline_displays(text, spans)
+    items, cursor = [], 0
+    for display in displays:
+        items += [("text", *_strip(text, cursor, display.start)), ("equation", display)]
+        cursor = display.remark[1] if display.remark else display.end
+    items.append(("text", *_strip(text, cursor, cut)))
+    items = [item for item in items if item[0] == "equation" or item[1] < item[2]]
+
+    p = paragraph._p
+    pPr = deepcopy(p.pPr) if p.pPr is not None else None
+    for child in p.findall(qn("w:r")):
+        p.remove(child)
+    previous = None
+    for kind, *args in items:
+        if previous is None:
+            target = p
+            if kind == "equation":
+                if p.pPr is not None:
+                    p.remove(p.pPr)
+                p.insert(0, _new_paragraph(pPr, True, width).pPr)
+        else:
+            target = _new_paragraph(pPr, kind == "equation", width)
+            previous.addnext(target)
+        previous = target
+        if kind == "text":
+            _emit(target, text, *args, spans, runs)
+            continue
+        display = args[0]
+        count += 1
+        rpr = next((rpr for start, end, rpr in runs if start <= display.start < end), None)
+        target.append(_text_run("\t", rpr))
+        target.append(omml(display.latex))
+        if display.remark:
+            target.append(_text_run(" ", rpr))
+            _emit(target, text, *display.remark, spans, runs)
+        target.append(_text_run(f"\t({chapter}.{count})", rpr))
+    return count

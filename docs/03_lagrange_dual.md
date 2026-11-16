@@ -121,10 +121,10 @@ $$
 
 Đây là bài toán đối ngẫu bậc hai. Ta tối đa hóa một hàm lõm theo alpha (tương đương tối thiểu hóa hàm lồi sau khi đổi dấu), với các ràng buộc tuyến tính.
 
-Sơ đồ sau tóm tắt toàn bộ quá trình suy diễn ở trên (Primal → Lagrangian → đạo hàm → Dual); đọc từ trái sang phải để nối lại các bước (3.1)–(3.6), nhánh chấm bên phải chỉ sang doc 06 khi áp dụng Kernel Trick.
+Sơ đồ sau tóm tắt toàn bộ quá trình suy diễn ở trên (Primal → Lagrangian → đạo hàm → Dual); đọc từ trên xuống để nối lại các bước (3.1)–(3.6); nhánh chấm cuối cùng là bước thay tích vô hướng bằng kernel, trình bày ở doc 06.
 
 ```mermaid
-flowchart LR
+flowchart TB
   subgraph PRIMAL["1 · Primal"]
     direction TB
     A["min ½‖w‖²+CΣξᵢ<br/>r.b. margin & ξᵢ≥0"]
@@ -134,7 +134,7 @@ flowchart LR
     B["L(w,b,ξ,α,μ)<br/>αᵢ≥0, μᵢ≥0"]
   end
   subgraph DAOHAM["3 · Đạo hàm = 0"]
-    direction TB
+    direction LR
     C["∂L/∂w=0<br/>w=Σαᵢyᵢxᵢ"] --> D["∂L/∂b=0<br/>Σαᵢyᵢ=0"] --> E["∂L/∂ξᵢ=0<br/>C−αᵢ−μᵢ=0"]
   end
   subgraph DUAL["4 · Dual"]
@@ -142,7 +142,7 @@ flowchart LR
     F["max Σαᵢ−½ΣΣαᵢαⱼyᵢyⱼxᵢᵀxⱼ<br/>r.b. Σαᵢyᵢ=0 · 0≤αᵢ≤C"]
   end
   PRIMAL --> LAGRANGE --> DAOHAM --> DUAL
-  DUAL -. "thay xᵢᵀxⱼ bằng K(xᵢ,xⱼ)" .-> KERNEL["Kernel Trick<br/>→ xem doc 06"]
+  DUAL -. "thay xᵢᵀxⱼ bằng K(xᵢ,xⱼ)" .-> KERNEL["Kernel Trick"]
   classDef standard fill:#f4f6f8,stroke:#84929d,color:#1e2933,stroke-width:1.3px
   classDef focus fill:#e7efef,stroke:#6e8a87,color:#1e2933,stroke-width:1.4px
   class A,B,C,D,E standard

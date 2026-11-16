@@ -6,6 +6,10 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import numpy as np
+from sklearn.datasets import make_moons
+from sklearn.model_selection import RepeatedStratifiedKFold, cross_val_score
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVC
 
 OUT = Path(__file__).resolve().parent
@@ -54,6 +58,49 @@ ax.legend(loc='upper left', bbox_to_anchor=(1.01,1), fontsize=11)
 ax.set_title('Hình học SVM: ranh giới và hai biên')
 save(fig, 'svm_geometry')
 
+# --- Candidate parallel boundaries (docs/01): cung huong khac offset; va khac huong. ---
+cand_neg = np.array([[-1.6, -.6], [-.7, -1.3], [-1.1, -1.]])
+cand_pos = np.array([[1.3, .7], [.6, 1.4], [1., 1.1]])
+
+
+def line_for(direction, t, xs):
+    return (t - direction[0]*xs)/direction[1]
+
+
+direction = np.array([1., 1.])/np.sqrt(2)
+proj_neg, proj_pos = cand_neg@direction, cand_pos@direction
+offsets = {'A': -.3, 'B': (proj_neg.max()+proj_pos.min())/2, 'C': 1.3}
+gaps = {name: min(t-proj_neg.max(), proj_pos.min()-t) for name, t in offsets.items()}
+assert np.isclose(offsets['B'], 0., atol=1e-9)
+assert gaps['B'] > gaps['A'] and gaps['B'] > gaps['C']
+
+direction2 = np.array([1., .25]); direction2 = direction2/np.linalg.norm(direction2)
+proj_neg2, proj_pos2 = cand_neg@direction2, cand_pos@direction2
+t2 = (proj_neg2.max()+proj_pos2.min())/2
+gap2 = min(t2-proj_neg2.max(), proj_pos2.min()-t2)
+assert gaps['B'] > gap2
+
+fig, axes = plt.subplots(1, 2, figsize=(11, 5.2))
+xline = np.linspace(-2.6, 2.6, 100)
+ax = axes[0]
+plot_points(ax, cand_neg, cand_pos)
+for name, t in offsets.items():
+    ax.plot(xline, line_for(direction, t, xline), color=INK if name == 'B' else GRAY,
+            lw=2.4 if name == 'B' else 1.6, ls='-' if name == 'B' else '--',
+            label=f'{name} (biên nhỏ nhất={gaps[name]:.2f})')
+ax.set_title('Cùng hướng, khác offset')
+ax.legend(loc='upper left', bbox_to_anchor=(1.03, 1), fontsize=9.5)
+
+ax2 = axes[1]
+plot_points(ax2, cand_neg, cand_pos)
+ax2.plot(xline, line_for(direction, offsets['B'], xline), color=INK, lw=2.4,
+         label=f"Hướng tối ưu (margin={2*gaps['B']:.2f})")
+ax2.plot(xline, line_for(direction2, t2, xline), color=RED, lw=1.8, ls='--',
+         label=f'Hướng khác (margin={2*gap2:.2f})')
+ax2.set_title('Khác hướng')
+ax2.legend(loc='upper left', bbox_to_anchor=(1.03, 1), fontsize=9.5)
+save(fig, 'candidate_boundaries')
+
 # f(x) = x1 + x2; the red point has f(x)=0.6, y=+1, hence xi=0.4.
 fig, ax = plt.subplots(figsize=(8,6))
 plot_points(ax, negative, positive)
@@ -67,6 +114,66 @@ ax.annotate('Điểm +1 trong biên\n$f(x)=0.6$, $\\xi=0.4$', xy=point,
 ax.legend(loc='upper left', bbox_to_anchor=(1.01,1), fontsize=11)
 ax.set_title('Soft margin: một điểm vi phạm biên')
 save(fig, 'soft_margin')
+
+# --- Hard vs soft margin (docs/02): mot outlier keo nghieng hard margin; soft margin voi vai C. ---
+rng_hs = np.random.default_rng(7)
+hs_neg = np.column_stack([rng_hs.normal(-2, .4, 10), rng_hs.normal(0, .6, 10)])
+hs_pos = np.column_stack([rng_hs.normal(2, .4, 10), rng_hs.normal(0, .6, 10)])
+hs_outlier = np.array([[.9, 0.]])  # nhãn -1, nằm sâu trong vùng của lớp +1
+hs_X = np.vstack([hs_neg, hs_outlier, hs_pos])
+hs_y = np.array([-1]*11 + [1]*10)
+
+hard = SVC(kernel='linear', C=1e6).fit(hs_X, hs_y)
+hard_margin = 2/np.linalg.norm(hard.coef_)
+assert hard.score(hs_X, hs_y) == 1.0 and hard_margin < .15
+
+
+def plot_boundary(ax, clf, color, lw, ls='-', label=None):
+    xs = np.linspace(-3.4, 3.4, 200)
+    w, b = clf.coef_[0], clf.intercept_[0]
+    ax.plot(xs, -(w[0]*xs+b)/w[1], color=color, lw=lw, ls=ls, label=label, zorder=3)
+
+
+fig, axes = plt.subplots(1, 2, figsize=(11.5, 5.2))
+ax = axes[0]
+ax.scatter(*hs_neg.T, c=BLUE, s=45, label='Lớp −1', zorder=4)
+ax.scatter(*hs_outlier.T, c=BLUE, s=95, marker='s', edgecolors=INK, linewidths=1.4,
+           label='Outlier nhãn −1', zorder=5)
+ax.scatter(*hs_pos.T, c=RED, marker='^', s=50, label='Lớp +1', zorder=4)
+plot_boundary(ax, hard, INK, 2.2, label=f'Hard margin (margin={hard_margin:.3f})')
+ax.set(xlim=(-3.4,3.4), ylim=(-2.6,2.6), xlabel='$x_1$', ylabel='$x_2$',
+       title='Hard margin bị một outlier kéo nghiêng')
+ax.legend(loc='lower left', fontsize=9)
+
+ax2 = axes[1]
+ax2.scatter(*hs_neg.T, c=BLUE, s=45, zorder=4)
+ax2.scatter(*hs_outlier.T, c=BLUE, s=95, marker='s', edgecolors=INK, linewidths=1.4, zorder=5)
+ax2.scatter(*hs_pos.T, c=RED, marker='^', s=50, zorder=4)
+soft_margins = {}
+for C, color, ls in [(.1, GRAY, '--'), (1, BLUE, '-.'), (100, RED, '-')]:
+    clf = SVC(kernel='linear', C=C).fit(hs_X, hs_y)
+    soft_margins[C] = 2/np.linalg.norm(clf.coef_)
+    plot_boundary(ax2, clf, color, 2.0, ls=ls, label=f'C={C} (margin={soft_margins[C]:.2f})')
+assert soft_margins[.1] > soft_margins[1] > soft_margins[100]
+ax2.set(xlim=(-3.4,3.4), ylim=(-2.6,2.6), xlabel='$x_1$', title='Soft margin: margin co lại khi C tăng')
+ax2.legend(loc='lower left', fontsize=9)
+save(fig, 'hard_vs_soft_margin')
+
+# --- Logistic vs hinge loss (docs/02): tu "logistic" den "SVM" theo margin co dau. ---
+z_lh = np.linspace(-2.2, 2.5, 400)
+hinge_lh = np.maximum(0, 1-z_lh)
+logistic_lh = np.log1p(np.exp(-z_lh))/np.log(2)  # co giãn để bằng 1 tại z=0 như hinge
+assert np.isclose(np.log1p(np.exp(0))/np.log(2), 1.0)
+assert np.isclose(np.log1p(np.exp(-1))/np.log(2), 0.4519, atol=1e-4)
+
+fig, ax = plt.subplots(figsize=(7,5))
+ax.plot(z_lh, hinge_lh, color=BLUE, lw=2.5, label='Hinge  $\\max(0,1-z)$')
+ax.plot(z_lh, logistic_lh, color=RED, lw=2.5, ls='--', label='Logistic đã co giãn')
+ax.axvline(1, color=GRAY, ls='--', lw=1)
+ax.set(xlim=(-2.2,2.5), ylim=(-.08,3.3), xlabel='Margin có dấu  $z=y f(x)$',
+       ylabel='Loss', title='Logistic loss và hinge loss theo margin có dấu')
+ax.legend(loc='upper right', fontsize=11)
+save(fig, 'logistic_vs_hinge')
 
 fig, ax = plt.subplots(figsize=(7,5))
 z = np.linspace(-1.2,2.5,400)
@@ -105,6 +212,66 @@ axes[0].set_ylabel('$x_2$')
 fig.legend(*axes[1].get_legend_handles_labels(), loc='lower center', ncol=2, fontsize=10, bbox_to_anchor=(.5,-.04))
 fig.suptitle('Cùng dữ liệu XOR tổng hợp; C = 1, RBF γ = 1',fontsize=13)
 save(fig, 'linear_rbf_xor')
+
+# --- RBF landmarks (docs/06): duong cong "giong nhau" va khong gian dac trung (phi1,phi2). ---
+gamma_rbf, l1, l2 = 1.0, -1.5, 1.5
+rbf_x = np.array([-2., -1., -.3, 0., .3, 1., 2.])
+rbf_y = np.array([1, 1, -1, -1, -1, 1, 1])
+
+
+def phi(x):
+    return np.exp(-gamma_rbf*(x-l1)**2), np.exp(-gamma_rbf*(x-l2)**2)
+
+
+phi1_pts, phi2_pts = phi(rbf_x)
+sums = phi1_pts + phi2_pts
+assert sums[rbf_y == -1].max() < 0.5 < sums[rbf_y == 1].min()
+
+fig, axes = plt.subplots(1, 2, figsize=(11.5, 5))
+ax = axes[0]
+xs_fine = np.linspace(-3.2, 3.2, 400)
+p1_fine, p2_fine = phi(xs_fine)
+ax.plot(xs_fine, p1_fine, color=INK, lw=2.2, label='$\\phi_1=K(x,l_1)$')
+ax.plot(xs_fine, p2_fine, color=GRAY, lw=2.2, ls='--', label='$\\phi_2=K(x,l_2)$')
+ax.axvline(l1, color=INK, lw=1, ls=':'); ax.axvline(l2, color=GRAY, lw=1, ls=':')
+ax.scatter(rbf_x[rbf_y == -1], np.full((rbf_y == -1).sum(), -.05), c=BLUE, s=55, zorder=5, label='Lớp −1')
+ax.scatter(rbf_x[rbf_y == 1], np.full((rbf_y == 1).sum(), -.05), c=RED, marker='^', s=55, zorder=5, label='Lớp +1')
+ax.set(xlim=(-3.2,3.2), ylim=(-.14,1.42), xlabel='$x$', ylabel='Giá trị kernel',
+       title='Hai landmark $l_1=-1.5$, $l_2=1.5$')
+ax.legend(loc='upper center', bbox_to_anchor=(.5, 1.0), fontsize=9, ncol=2)
+
+ax2 = axes[1]
+ax2.scatter(phi1_pts[rbf_y == -1], phi2_pts[rbf_y == -1], c=BLUE, s=80, label='Lớp −1', zorder=4)
+ax2.scatter(phi1_pts[rbf_y == 1], phi2_pts[rbf_y == 1], c=RED, marker='^', s=80, label='Lớp +1', zorder=4)
+diag = np.linspace(-.05, .85, 50)
+ax2.plot(diag, .5-diag, color=INK, lw=1.6, ls='--', label='$\\phi_1+\\phi_2=0.5$')
+ax2.set(xlim=(-.05,.85), ylim=(-.05,.85), xlabel='$\\phi_1$', ylabel='$\\phi_2$',
+       title='Không gian đặc trưng $(\\phi_1,\\phi_2)$')
+ax2.set_aspect('equal')
+ax2.legend(loc='upper right', fontsize=9.5)
+save(fig, 'rbf_landmarks')
+
+# --- Kernel comparison tren make_moons (docs/06): CV accuracy boxplot cho 4 kernel. ---
+Xm, ym = make_moons(n_samples=200, noise=.25, random_state=0)
+cv_moons = RepeatedStratifiedKFold(n_splits=5, n_repeats=10, random_state=0)
+kernel_names = ['linear', 'poly', 'rbf', 'sigmoid']
+cv_scores = {k: cross_val_score(make_pipeline(StandardScaler(), SVC(kernel=k, gamma='scale')), Xm, ym, cv=cv_moons)
+             for k in kernel_names}
+cv_means = {k: v.mean() for k, v in cv_scores.items()}
+assert cv_means['rbf'] > cv_means['linear'] > cv_means['sigmoid']
+
+fig, ax = plt.subplots(figsize=(8, 5.5))
+ax.boxplot([cv_scores[k] for k in kernel_names], tick_labels=kernel_names, patch_artist=True,
+           medianprops={'color': INK, 'lw': 1.8}, boxprops={'facecolor': '#eaf0f8', 'edgecolor': INK})
+jitter_rng = np.random.default_rng(1)
+best_kernel = max(cv_means, key=cv_means.get)
+for i, k in enumerate(kernel_names):
+    jitter = jitter_rng.uniform(-.08, .08, len(cv_scores[k]))
+    ax.scatter(np.full(len(cv_scores[k]), i+1)+jitter, cv_scores[k],
+               c=RED if k == best_kernel else GRAY, s=14, alpha=.6, zorder=3)
+ax.set(ylabel='Accuracy (CV)', xlabel='Kernel',
+       title='So sánh kernel trên make_moons (50 lần CV mỗi kernel)')
+save(fig, 'kernel_comparison_moons')
 
 # --- KKT alpha number line (docs/04): ba vùng của alpha_i trên [0,C]. ---
 # alpha_1=alpha_2=0.25 va alpha_3=alpha_4=0 la nghiem cua vi du giai tay (docs/07),
@@ -257,4 +424,4 @@ ax.legend(loc='upper left', bbox_to_anchor=(1.01, 1), fontsize=11)
 ax.set_title('Ví dụ giải tay: 4 điểm, w, b và hai biên')
 save(fig, 'hand_example')
 
-print(f'Saved 7 figures in {OUT}; XOR training accuracy: linear={linear.score(X,y):.3f}, RBF={rbf.score(X,y):.3f}')
+print(f'Saved 12 figures in {OUT}; XOR training accuracy: linear={linear.score(X,y):.3f}, RBF={rbf.score(X,y):.3f}')

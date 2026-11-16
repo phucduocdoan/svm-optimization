@@ -65,6 +65,12 @@ Khoảng an toàn nhỏ nhất đạt giá trị lớn nhất đúng tại $t=1$
 
 *Ý tưởng minh họa tham khảo từ Phạm Đình Khanh, Machine Learning Algorithms to Practice, ch. 7 SVM: [phamdinhkhanh.github.io/deepai-book/ch_ml/SVM.html](https://phamdinhkhanh.github.io/deepai-book/ch_ml/SVM.html).*
 
+Ý tưởng trên mở rộng tự nhiên sang 2D: không chỉ có một hướng để trượt ranh giới, mà còn phải chọn cả hướng pháp tuyến.
+
+![Nhiều ranh giới ứng viên trên cùng một bộ dữ liệu 2D tách được](images/scientific/candidate_boundaries.svg)
+
+*Hình 2: Bên trái: giữ nguyên hướng pháp tuyến, chỉ trượt ranh giới qua ba offset A, B, C — khoảng an toàn nhỏ nhất lớn nhất tại B, đường nằm cách đều hai điểm gần nhất của hai lớp. Bên phải: đổi sang một hướng pháp tuyến khác hẳn; hướng này vẫn phân tách đúng hai lớp nhưng margin chỉ còn 1.92, nhỏ hơn margin 2.83 của hướng tối ưu (đường B; margin bằng hai lần khoảng an toàn nhỏ nhất 1.41).*
+
 Vì vậy, tối đa hóa margin tương đương tối thiểu hóa $\|w\|$. Ta dùng bình phương và hệ số 1/2 vì đạo hàm gọn hơn:
 
 $$

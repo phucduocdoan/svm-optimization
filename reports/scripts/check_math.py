@@ -25,9 +25,9 @@ from docx.oxml.ns import qn
 from latex2mathml.converter import convert as latex_to_mathml
 from mathml2omml import convert as mathml_to_omml
 
-ROOT = Path(__file__).resolve().parents[1]
-DOCX = ROOT / "reports/svm_optimization_report.docx"
-CONTENT = ROOT / "reports/report_content.json"
+ROOT = Path(__file__).resolve().parents[2]
+DOCX = ROOT / "reports/output/svm_optimization_report.docx"
+CONTENT = ROOT / "reports/source/report_content.json"
 M = "{http://schemas.openxmlformats.org/officeDocument/2006/math}"
 CODE_FONT = "Consolas"
 
@@ -63,7 +63,7 @@ GREEK_VARIANT = str.maketrans("ϕϵϑϰϱϖ", "φεθκρπ")
 
 def check_source_latex() -> int:
     count = 0
-    for path in sorted((ROOT / "docs").glob("*.md")):
+    for path in sorted((ROOT / "docs").glob("*.md")) + [ROOT / "reports/source/report_additions.md"]:
         for match in LATEX_DELIMITED.finditer(path.read_text(encoding="utf-8")):
             formula = match.group(1) or match.group(2)
             # mathml2omml không hỗ trợ môi trường aligned.
@@ -88,11 +88,13 @@ def _is_code(t) -> bool:
 def plain_text(p) -> str:
     """Văn bản thường của đoạn; mỗi công thức/code thành một dấu ⟦⟧ để không dính chữ."""
     out = []
-    for el in p.iter(qn("w:t"), qn("w:tab"), M + "oMath"):
+    for el in p.iter(qn("w:t"), qn("w:tab"), qn("w:br"), M + "oMath"):
         if el.tag == M + "oMath":
             out.append("⟦⟧")
         elif _in_math(el):
             continue
+        elif el.tag == qn("w:br"):
+            out.append("\n")
         elif el.tag == qn("w:tab"):
             if el.getparent().tag == qn("w:r"):  # bỏ tab stop trong w:pPr/w:tabs
                 out.append("\t")
@@ -170,6 +172,51 @@ def check_equations(body) -> tuple[list[str], list[str]]:
     return errors, labels
 
 
+CAPTION_LABEL = re.compile(r"^(Hình|Bảng) (\d+)\.(\d+)\. \S")
+
+
+def _style(p) -> str | None:
+    style = p.find(qn("w:pPr") + "/" + qn("w:pStyle"))
+    return None if style is None else style.get(qn("w:val"))
+
+
+def check_captions(body) -> tuple[list[str], dict[str, list[str]]]:
+    """Mỗi hình có chú thích ngay dưới, mỗi chú thích bảng đứng ngay trên bảng; số (c.n) liên tục theo chương; danh mục khớp."""
+    errors, found = [], {"Hình": [], "Bảng": []}
+    chapter, counts = None, {}
+    for el in body:
+        if el.tag == qn("w:p") and _chapter(el) is not None:
+            chapter, counts = ((chapter or 0) + 1 if _chapter(el) else None), {}
+        if el.findall(".//" + qn("w:drawing")):
+            following = el.getnext()
+            if following is None or _style(following) != "Caption" or not plain_text(following).startswith("Hình "):
+                errors.append(f"Hình không có chú thích ngay dưới, sau đoạn: {plain_text(el.getprevious())[:80]!r}")
+        if el.tag != qn("w:p") or _style(el) != "Caption":
+            continue
+        text = plain_text(el)
+        label = CAPTION_LABEL.match(text)
+        if label is None:
+            errors.append(f"Chú thích thiếu nhãn Hình/Bảng c.n.: {text[:80]!r}")
+            continue
+        kind = label.group(1)
+        counts[kind] = counts.get(kind, 0) + 1
+        expected = (str(chapter), str(counts[kind]))
+        if (label.group(2), label.group(3)) != expected:
+            errors.append(f"Đánh số sai: {text[:40]!r}, cần {kind} {expected[0]}.{expected[1]}.")
+        neighbour = el.getprevious() if kind == "Hình" else el.getnext()
+        if kind == "Bảng" and (neighbour is None or neighbour.tag != qn("w:tbl")):
+            errors.append(f"Chú thích bảng không đứng ngay trên bảng: {text[:80]!r}")
+        if kind == "Hình" and (neighbour is None or not neighbour.findall(".//" + qn("w:drawing"))):
+            errors.append(f"Chú thích hình không đứng ngay dưới hình: {text[:80]!r}")
+        found[kind].append(text)
+    for kind, title in (("Hình", "DANH MỤC CÁC HÌNH ẢNH"), ("Bảng", "DANH MỤC BẢNG BIỂU")):
+        heading = next((p for p in body.iter(qn("w:p")) if plain_text(p).strip() == title), None)
+        listed = plain_text(heading.getnext()).split("\n") if heading is not None else []
+        if listed != found[kind]:
+            errors.append(f"{title} không khớp chú thích trong bài: {len(listed)} dòng, {len(found[kind])} chú thích.")
+    return errors, found
+
+
 def _doc_tokens(body) -> list[str]:
     tokens = []
     for el in body.iter(qn("w:t"), M + "t", M + "chr"):
@@ -228,14 +275,17 @@ def main() -> None:
     errors = check_leftovers(paragraphs)
     equation_errors, labels = check_equations(body)
     errors += equation_errors
+    caption_errors, captions = check_captions(body)
+    errors += caption_errors
     records = json.loads(CONTENT.read_text(encoding="utf-8"))
     errors += check_content(body, records)
     if errors:
         print("\n".join(errors))
         sys.exit(f"{len(errors)} lỗi.")
     math_count = len(body.findall(".//" + M + "oMath"))
-    print(f"OK: {latex_count} công thức LaTeX trong docs; {math_count} Word math; "
-          f"{len(labels)} công thức khối {labels[0]}…{labels[-1]}; {len(records)} đoạn bản nền còn đủ.")
+    print(f"OK: {latex_count} công thức LaTeX trong nguồn Markdown; {math_count} Word math; "
+          f"{len(labels)} công thức khối {labels[0]}…{labels[-1]}; {len(captions['Hình'])} hình, "
+          f"{len(captions['Bảng'])} bảng đánh số đúng; {len(records)} đoạn bản nền còn đủ.")
 
 
 if __name__ == "__main__":

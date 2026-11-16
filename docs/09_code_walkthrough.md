@@ -76,13 +76,22 @@ Hãy phân biệt `K` là ma trận kernel giữa mọi cặp mẫu, không ph�
 Ví dụ kernel trick trên hai tập mẫu `X` và `Z`:
 
 ```python
+import numpy as np
 from svm_optimization.models.kernel import linear_kernel, rbf_kernel
 
+X = np.array([[0., 0.], [1., 1.]])
+Z = np.array([[0., 1.], [1., 0.], [2., 2.]])
 K_linear = linear_kernel(X, Z)
 K_rbf = rbf_kernel(X, Z, gamma=0.5)
+print(K_linear)
+# [[0. 0. 0.]
+#  [1. 1. 4.]]
+print(K_rbf.round(4))
+# [[0.6065 0.6065 0.0183]
+#  [0.6065 0.6065 0.3679]]
 ```
 
-Mỗi phần tử `K[i, j]` so sánh mẫu thứ `i` của `X` với mẫu thứ `j` của `Z`. Linear trả tích vô hướng; RBF trả `exp(-gamma * ||X[i] - Z[j]||²)`. Ví dụ giả định `X` và `Z` đã được chuẩn bị và có cùng số cột.
+Mỗi phần tử `K[i, j]` so sánh mẫu thứ `i` của `X` với mẫu thứ `j` của `Z`. Linear trả tích vô hướng; RBF trả `exp(-gamma * ||X[i] - Z[j]||²)`. `X` và `Z` phải có cùng số cột.
 
 ### `svm.py`
 

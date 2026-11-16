@@ -41,8 +41,8 @@ def main():
                          "f1": metrics["f1"], "n_support_vectors": n_support})
     result = pd.DataFrame(rows)
     print(result.to_string(index=False, float_format=lambda v: f"{v:.4f}"))
-    result.to_csv("reports/C_kernel_comparison.csv", index=False)
-    print("Saved: reports/C_kernel_comparison.csv")
+    result.to_csv("reports/data/C_kernel_comparison.csv", index=False)
+    print("Saved: reports/data/C_kernel_comparison.csv")
 
 
 if __name__ == "__main__":

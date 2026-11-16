@@ -7,5 +7,5 @@ build/
 dist/
 data/banknote/*.csv
 reports/figures/*.png
-reports/*.csv
+reports/data/C_kernel_comparison.csv
 .ipynb_checkpoints/

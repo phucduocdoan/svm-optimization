@@ -28,6 +28,45 @@ nên $x=\lambda/2$ và $y=\lambda/4$. Thay vào ràng buộc $x+y=3$: $\lambda/2
 
 Chạy lại bằng `scipy.optimize.minimize` với ràng buộc đẳng thức `x+y=3` cho cùng kết quả $x=2,\ y=1$, mục tiêu $\approx6$, khớp với lời giải tay. Cơ chế vừa dùng — đưa ràng buộc vào hàm mục tiêu qua một nhân tử rồi cho đạo hàm bằng 0 — chính là cách phần dưới sẽ lặp lại với SVM, chỉ khác là có nhiều biến hơn và các ràng buộc là bất đẳng thức nên nhân tử ($\alpha_i,\mu_i$) phải không âm [[5]](10_image_credits.md#ref-5).
 
+### Lagrangian tổng quát và đối ngẫu
+
+Tổng quát, xét bài toán cực tiểu $f(x)$ với ràng buộc đẳng thức $h_i(x)=0$ và bất đẳng thức $g_j(x)\leq0$. Hàm Lagrange gắn mỗi ràng buộc với một nhân tử:
+
+$$
+L(x,\lambda,\nu)=f(x)+\sum_i\lambda_i h_i(x)+\sum_j\nu_j g_j(x).
+$$
+
+Khi $\nu_j\geq0$, tại mọi điểm khả thi phần cộng thêm không dương nên $L\leq f$. Do đó $q(\lambda,\nu)=\min_x L(x,\lambda,\nu)$ luôn là cận dưới của giá trị tối ưu gốc [[5]](10_image_credits.md#ref-5). Bài toán đối ngẫu tìm cận dưới tốt nhất: cực đại $q$ với $\nu\geq0$. Hàm $q$ luôn lõm, kể cả khi $f$ không lồi, vì nó là cực tiểu của một họ hàm tuyến tính theo $(\lambda,\nu)$. Khi hai giá trị tối ưu bằng nhau ta có đối ngẫu mạnh (strong duality).
+
+SVM thuộc lớp quy hoạch bậc hai: cực tiểu $\frac12x^TAx+c^Tx+r$ với $Hx=d$, $Gx\leq e$. Hessian của mục tiêu là $A$; nếu $A$ nửa xác định dương thì mục tiêu lồi. Nếu thêm vào đó có một điểm thỏa mọi đẳng thức và thỏa chặt mọi bất đẳng thức (điều kiện Slater) thì đối ngẫu mạnh xảy ra và KKT vừa cần vừa đủ. Với soft margin, $A$ là ma trận đơn vị trên phần $w$ và bằng 0 trên $b,\xi$; chọn các $\xi_i$ đủ lớn là thỏa chặt mọi ràng buộc, nên Slater luôn đúng.
+
+### Gom bình phương: một bài QP giải tay
+
+Một bài QP nhỏ đôi khi giải được chỉ bằng cách gom bình phương [[5]](10_image_credits.md#ref-5). Xét
+
+$$
+\min_{x,y}\ 2x^2+2xy+y^2+2x+2y+1\quad\text{sao cho}\quad x+y\geq2,\ x\geq1.
+$$
+
+Mục tiêu viết lại được thành $(x+y+1)^2+x^2$. Trên miền ràng buộc có $x+y+1\geq3$ và $x\geq1$, nên giá trị không nhỏ hơn $3^2+1^2=10$, đạt tại $x=y=1$; `scipy.optimize.minimize` cho cùng nghiệm. Ma trận $A$ có hai hàng $(4,2)$ và $(2,2)$, hai trị riêng dương nên mục tiêu lồi; điểm $(2,2)$ thỏa chặt cả hai ràng buộc nên Slater đúng. Mẹo này hiếm khi dùng được; với bài toán lớn như SVM phải dựa vào KKT.
+
+### KKT của QP chỉ có đẳng thức là một hệ tuyến tính
+
+Khi chỉ có ràng buộc đẳng thức, đạo hàm của $L$ theo $x$ bằng 0 cho $Ax+H^T\lambda=-c$, còn ràng buộc cho $Hx=d$. Ghép lại:
+
+$$
+\begin{bmatrix}A&H^T\\H&0\end{bmatrix}\begin{bmatrix}x\\\lambda\end{bmatrix}=\begin{bmatrix}-c\\d\end{bmatrix}.
+$$
+
+Bài QP ở đầu mục có $A=\mathrm{diag}(2,4)$, $c=0$, $H=[1,1]$, $d=3$. Giải hệ ba phương trình được lại $x=2$, $y=1$; nhân tử ra $-4$ thay vì $4$ chỉ vì ở đây ràng buộc được cộng vào $L$ thay vì trừ đi.
+
+```python
+import numpy as np
+
+K = np.array([[2., 0., 1.], [0., 4., 1.], [1., 1., 0.]])
+print(np.linalg.solve(K, [0., 0., 3.]))  # [ 2.  1. -4.]
+```
+
 ## 1. Nhắc lại Primal
 
 $$
@@ -106,7 +145,13 @@ $$
 
 ## 4. Thay trở lại Lagrangian
 
-Sau khi loại $w,b,\xi,\mu$, ta nhận được:
+Thay (3.3)–(3.5) vào (3.2), từng nhóm số hạng triệt tiêu như sau:
+
+- Các số hạng chứa $\xi_i$ gom lại thành $\sum_i(C-\alpha_i-\mu_i)\xi_i=0$.
+- Số hạng chứa $b$ là $-b\sum_i\alpha_i y_i=0$.
+- $-\sum_i\alpha_i y_i w^Tx_i=-w^Tw=-\|w\|^2$, cộng với $\frac12\|w\|^2$ còn $-\frac12\|w\|^2$.
+
+Viết $\|w\|^2=\sum_i\sum_j\alpha_i\alpha_jy_iy_jx_i^Tx_j$ theo (3.3) và loại $w,b,\xi,\mu$, ta nhận được:
 
 $$
 \boxed{

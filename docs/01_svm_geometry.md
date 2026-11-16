@@ -37,9 +37,23 @@ $$
 
 Tại sao phải chia cho $\|w\|$? Nếu nhân cả $w$ và $b$ với 10 thì phương trình siêu phẳng không đổi. Chia cho độ dài vector pháp tuyến làm khoảng cách không phụ thuộc cách scale phương trình.
 
+Trong 2D, (1.2) chính là công thức khoảng cách quen thuộc từ điểm $(x_1,x_2)$ đến đường thẳng $w_1x_1+w_2x_2+b=0$, tức $|w_1x_1+w_2x_2+b|/\sqrt{w_1^2+w_2^2}$. Khi mọi điểm được phân loại đúng, $w^Tx_i+b$ cùng dấu với $y_i$, nên có thể bỏ trị tuyệt đối bằng cách nhân với nhãn [[5]](10_image_credits.md#ref-5):
+
+$$
+d(x_i,H)=\frac{y_i(w^Tx_i+b)}{\|w\|}.
+$$
+
+Margin của một ranh giới là khoảng cách tới điểm gần nhất, và SVM chọn ranh giới làm margin này lớn nhất:
+
+$$
+\max_{w,b}\ \min_i\ \frac{y_i(w^Tx_i+b)}{\|w\|}.
+$$
+
+Bài toán max-min này khó giải trực tiếp; mục 4 dùng phép chuẩn hóa để đưa nó về dạng gọn hơn.
+
 ## 4. Chuẩn hóa margin
 
-Ta có thể nhân $w,b$ với một hằng số dương mà không làm đổi ranh giới phân lớp. SVM chọn một cách chuẩn hóa thuận tiện sao cho hai biên gần nhất thỏa:
+Ta có thể nhân $w,b$ với một hằng số dương mà không làm đổi ranh giới phân lớp. Vì vậy có thể chọn hệ số nhân sao cho điểm gần nhất có $y_i(w^Tx_i+b)=1$; khi đó mọi điểm thỏa $y_i(w^Tx_i+b)\geq1$, bài toán max-min ở mục 3 trở thành cực đại $1/\|w\|$ với ràng buộc đó [[5]](10_image_credits.md#ref-5). Nói cách khác, SVM chọn một cách chuẩn hóa thuận tiện sao cho hai biên gần nhất thỏa:
 
 $$
 w^T x+b=+1,\qquad w^T x+b=-1.

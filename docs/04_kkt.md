@@ -18,7 +18,7 @@ $$
 \alpha_i\geq0,\qquad \mu_i\geq0.
 $$
 
-Vì $\mu_i=C-\alpha_i$, tương đương:
+Đây đúng là điều kiện để hàm Lagrange là cận dưới của bài toán gốc (doc 03, mục 0). Vì $\mu_i=C-\alpha_i$, tương đương:
 
 $$
 0\leq\alpha_i\leq C.
@@ -45,6 +45,12 @@ $$
 $$
 
 Một tích bằng 0 nghĩa là ít nhất một trong hai thừa số phải bằng 0. Đây là chìa khóa để hiểu Support Vectors.
+
+Kết hợp (4.2), (4.3) với $\mu_i=C-\alpha_i$ được ba trường hợp [[5]](10_image_credits.md#ref-5):
+
+- $\alpha_i=0$: $\mu_i=C>0$ nên $\xi_i=0$, và $y_if(x_i)\geq1$. Điểm nằm ngoài hoặc trên margin.
+- $0<\alpha_i<C$: $\mu_i>0$ nên $\xi_i=0$; $\alpha_i>0$ nên ngoặc vuông trong (4.2) bằng 0, tức $y_if(x_i)=1$. Điểm nằm đúng trên margin.
+- $\alpha_i=C$: $\mu_i=0$ nên $\xi_i$ được phép dương. Điểm nằm trên margin, trong margin hoặc bị phân loại sai.
 
 ## 2. Alpha nói gì về một điểm?
 
@@ -80,6 +86,14 @@ $$
 
 Công thức dự đoán cũng chỉ cần các mẫu support vector.
 
+### Tìm b
+
+Lấy một điểm $x_i$ nằm đúng trên margin ($0<\alpha_i<C$). Từ $y_i(w^Tx_i+b)=1$ và $y_i^2=1$ suy ra $b=y_i-w^Tx_i$. Để giảm sai số số học, lấy trung bình trên tập $M$ các điểm như vậy:
+
+$$
+b=\frac{1}{|M|}\sum_{i\in M}(y_i-w^Tx_i).
+$$
+
 ## 4. Ví dụ giải tay
 
 Trong `experiments/02_hand_example.py`, nghiệm có:
@@ -89,6 +103,23 @@ Trong `experiments/02_hand_example.py`, nghiệm có:
 - $\xi_i=0$ cho cả bốn điểm.
 
 Hai điểm đầu nằm đúng trên margin và có alpha nằm giữa 0 và C. Hai điểm còn lại nằm ngoài margin và có alpha bằng 0.
+
+Từ đó $w=0.25(1,1)+0.25(1,1)=(0.5,0.5)$ và $b=1-w^T(1,1)=0$. Giá trị đối ngẫu bằng $0.5-0.25=0.25$, đúng bằng giá trị gốc $\frac12\|w\|^2=0.25$: đối ngẫu mạnh. Đoạn code sau lấy alpha từ scikit-learn rồi dựng lại $w$, $b$ theo các công thức trên.
+
+```python
+import numpy as np
+from sklearn.svm import SVC
+
+X = np.array([[-1., -1.], [1., 1.], [-2., -1.], [2., 1.]])
+y = np.array([-1, 1, -1, 1])
+clf = SVC(kernel='linear', C=10).fit(X, y)
+alpha_y = clf.dual_coef_[0]  # alpha_i * y_i của các vector hỗ trợ
+sv = clf.support_vectors_
+w = alpha_y @ sv
+b = np.mean(y[clf.support_] - sv @ w)
+print(clf.support_, np.abs(alpha_y))  # [0 1] [0.25 0.25]
+print(w, b)                           # [0.5 0.5] 0.0
+```
 
 ## 5. Liên hệ với code
 

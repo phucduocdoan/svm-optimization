@@ -81,17 +81,22 @@ def test_inline_fraction_is_linear_display_fraction_is_stacked():
     assert [linear for linear in fractions.values() if linear == [True]] == [[True]]
 
 
-def test_sum_without_upper_limit_hides_empty_slot():
+def test_sum_and_root_hide_empty_slots():
     body = OxmlElement("w:body")
-    for latex in (r"\sum_i \alpha_i y_i", r"\sum_{i=1}^{n} \xi_i"):
+    for latex in (r"\sum_i \alpha_i y_i", r"\sum_{i=1}^{n} \xi_i", r"\sqrt{2}", r"\sqrt[3]{x}"):
         body.append(omml(latex))
     assert check_math.check_placeholders(body) == []
-    hides = [[flag.tag[len(check_math.M):] for flag in nary.find(f"{check_math.M}naryPr")
-              if flag.tag.endswith("Hide")] for nary in body.iter(f"{check_math.M}nary")]
-    assert hides == [["supHide"], []]
-    for flag in body.iter(f"{check_math.M}supHide"):
+    hidden = [[flag.tag[len(check_math.M):] for flag in el.find(f"{el.tag}Pr") if flag.tag.endswith("Hide")]
+              for kind in ("nary", "rad") for el in body.iter(f"{check_math.M}{kind}")]
+    assert hidden == [["supHide"], [], ["degHide"], []]
+    for flag in [*body.iter(f"{check_math.M}supHide"), *body.iter(f"{check_math.M}degHide")]:
         flag.getparent().remove(flag)
-    assert len(check_math.check_placeholders(body)) == 1
+    assert len(check_math.check_placeholders(body)) == 2
+
+
+def test_spacing_commands_keep_their_space():
+    text = "".join(omml(r"a = 0, \quad b \qquad c \, d").itertext())
+    assert text == "a=0, b  c d"
 
 
 def test_checker_catches_leftover_math_wrong_number_and_lost_content():

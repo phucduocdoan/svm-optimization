@@ -58,6 +58,8 @@ với hai nhóm ràng buộc ở trên.
 - $C$ lớn: phạt vi phạm mạnh; mô hình cố gắng phân loại đúng/đặt điểm ra ngoài margin hơn, nhưng có thể nhạy với nhiễu.
 - $C$ nhỏ: chấp nhận vi phạm nhiều hơn để ưu tiên margin rộng và regularization mạnh hơn.
 
+Khi $C$ đủ lớn, phần phạt $C\sum_i\xi_i$ lấn át $\frac12\|w\|^2$; với dữ liệu tách được, nghiệm tối ưu có mọi $\xi_i=0$ và soft margin trùng với hard margin [[5]](10_image_credits.md#ref-5).
+
 Không có giá trị C luôn tốt nhất; phải chọn bằng validation/cross-validation.
 
 ## 3. Hinge loss là slack tối ưu
@@ -111,6 +113,16 @@ for z in [-2, -1, 0, 1, 2]:
 ![Hinge loss theo margin có dấu](images/scientific/hinge_loss.svg)
 
 *Hình 5: Hinge loss bằng 0 khi margin có dấu đạt 1 trở lên.*
+
+### Góc nhìn điều chuẩn: $\lambda=1/C$
+
+Chia (2.4) cho $C$ không làm đổi nghiệm, và đặt $\lambda=1/C$ được dạng "loss + điều chuẩn" quen thuộc [[5]](10_image_credits.md#ref-5):
+
+$$
+\sum_{i=1}^{n}\max(0,1-y_i f(x_i))+\frac{\lambda}{2}\|w\|^2,\qquad\lambda=\frac1C.
+$$
+
+So với hồi quy logistic có điều chuẩn L2, SVM chỉ thay logistic loss bằng hinge loss. Tăng $\lambda$, tức giảm $C$, làm $w$ nhỏ lại, margin rộng ra và ranh giới bớt bám theo từng điểm, nên giảm $C$ là cách đầu tiên nên thử khi mô hình quá khớp.
 
 ### Ba trường hợp của $\xi_i$
 

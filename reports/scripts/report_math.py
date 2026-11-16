@@ -451,18 +451,31 @@ class Display:
 
 
 def omml(latex: str, inline: bool = False):
-    xml = mathml_to_omml(latex_to_mathml(latex))
+    # mathml2omml bỏ qua <mspace>, nên \quad, \, phải thành ký tự khoảng trắng thật.
+    mathml = re.sub(r'<mspace width="([\d.]+)em" ?/>',
+                    lambda m: f"<mtext>{chr(0x2003) * round(float(m[1])) or chr(0x2009)}</mtext>",
+                    latex_to_mathml(latex))
+    xml = mathml_to_omml(mathml)
     if inline:  # phân số trong dòng viết dạng a/b, không xếp chồng làm giãn dòng
         xml = xml.replace("<m:f>", '<m:f><m:fPr><m:type m:val="lin"/></m:fPr>')
     math = parse_xml(xml.replace("<m:oMath>", f'<m:oMath xmlns:m="{OMML_NS}">', 1).encode("utf-8"))
-    for nary in math.iter(qn("m:nary")):  # \sum_i không có cận trên: ẩn ô rỗng, Word mới không vẽ ô vuông
-        props = nary.find(qn("m:naryPr"))
-        for slot in ("sub", "sup"):
-            if not "".join(nary.find(qn(f"m:{slot}")).itertext()).strip():
-                hide = OxmlElement(f"m:{slot}Hide")
-                hide.set(qn("m:val"), "1")
-                ctrl = props.find(qn("m:ctrlPr"))
-                ctrl.addprevious(hide) if ctrl is not None else props.append(hide)
+    # Ô cận/bậc trống (\sum_i không có cận trên, \sqrt không có bậc) phải được ẩn, nếu không Word vẽ ô vuông.
+    for kind, slots in (("nary", ("sub", "sup")), ("rad", ("deg",))):
+        for element in math.iter(qn(f"m:{kind}")):
+            props = element.find(qn(f"m:{kind}Pr"))
+            if props is None:
+                props = OxmlElement(f"m:{kind}Pr")
+                element.insert(0, props)
+            for slot in slots:
+                content = element.find(qn(f"m:{slot}"))
+                if content is None:
+                    content = OxmlElement(f"m:{slot}")
+                    element.find(qn("m:e")).addprevious(content)
+                if not "".join(content.itertext()).strip():
+                    hide = OxmlElement(f"m:{slot}Hide")
+                    hide.set(qn("m:val"), "1")
+                    ctrl = props.find(qn("m:ctrlPr"))
+                    ctrl.addprevious(hide) if ctrl is not None else props.append(hide)
     return math
 
 

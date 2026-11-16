@@ -43,6 +43,24 @@ print(decision_score(X, w, 0.0))  # [-1., 1.]
 print(margin_width(w))            # 2.828427...
 ```
 
+## Trước: Máy vector hỗ trợ lề mềm (Soft Margin SVM)
+
+Bài toán lề cứng ở trên có thể suy ra trực tiếp từ yêu cầu lề lớn nhất qua ba bước [5]. Từ đây, các phần bổ sung dùng quy ước hàm quyết định $f(x) = w^T x + b$ như trong code; quy ước này tương đương $w^T x - b$ của bản nền khi đổi dấu bias.
+
+Bước thứ nhất là đo khoảng cách. Trong mặt phẳng, khoảng cách từ điểm $(x_1, x_2)$ tới đường thẳng $w_1 x_1 + w_2 x_2 + b = 0$ bằng $|w_1 x_1 + w_2 x_2 + b|$ chia cho $\sqrt{w_1^2 + w_2^2}$. Mẫu số chính là $\|w\|$, nên công thức giữ nguyên dạng trong không gian $d$ chiều:
+
+$$d(x_i, H) = \frac{|w^T x_i + b|}{\|w\|}$$
+
+Khi siêu phẳng phân loại đúng mẫu $x_i$, dấu của $w^T x_i + b$ trùng với nhãn: dương nếu $y_i = +1$, âm nếu $y_i = -1$. Trong cả hai trường hợp, tích $y_i(w^T x_i + b)$ không âm và bằng đúng giá trị tuyệt đối, nên có thể bỏ dấu trị tuyệt đối:
+
+$$d(x_i, H) = \frac{y_i(w^T x_i + b)}{\|w\|}$$
+
+Bước thứ hai là phát biểu mục tiêu. Lề của một siêu phẳng do điểm gần nó nhất quyết định, nên siêu phẳng tốt nhất là siêu phẳng làm khoảng cách nhỏ nhất ấy lớn nhất:
+
+$$\max_{w, b} \min_{i} \frac{y_i(w^T x_i + b)}{\|w\|}$$
+
+Bước thứ ba là khử bậc tự do thừa. Nhân $w$ và $b$ với cùng một số $k > 0$ không làm siêu phẳng dịch đi, nên mọi khoảng cách giữ nguyên. Ta được quyền chọn $k$ sao cho điểm gần nhất có $y_i(w^T x_i + b) = 1$; khi đó mọi điểm khác có tử số ít nhất bằng 1, và bài toán max–min trở thành cực đại $1/\|w\|$ với ràng buộc $y_i(w^T x_i + b) \geq 1$ cho mọi $i$. Cực đại $1/\|w\|$ cũng là cực tiểu $\|w\|$, và để đạo hàm gọn người ta thay bằng $\frac{1}{2}\|w\|^2$, đúng là bài toán lề cứng đã phát biểu. Hàm mục tiêu bậc hai lồi và các ràng buộc tuyến tính nên đây là một bài toán quy hoạch bậc hai lồi.
+
 ## Trước: Vai trò của biến bù và tham số điều chuẩn C
 
 Chỉ một điểm ngoại lai nằm lẫn vào phía lớp đối diện cũng có thể buộc lề cứng chọn một ranh giới rất lệch, với lề gần bằng 0 [5]. Hình sau dùng hai cụm tổng hợp cách xa nhau, cộng thêm một điểm nhãn $-1$ nằm sâu trong cụm $+1$. Lề cứng phải nghiêng sát điểm ngoại lai để vẫn phân loại đúng mọi điểm, nên lề chỉ còn $0.095$. Lề mềm cho phép điểm đó vi phạm; $C$ càng lớn thì mô hình càng ít chấp nhận vi phạm và lề càng co lại: $3.43$ với $C = 0.1$, $2.80$ với $C = 1$, $0.21$ với $C = 100$.
@@ -51,7 +69,7 @@ Chỉ một điểm ngoại lai nằm lẫn vào phía lớp đối diện cũng
 
 ## Trước: Mối liên hệ với hàm mất mát Bản lề (Hinge Loss)
 
-Ảnh hưởng của $C$ có thể kiểm tra trực tiếp bằng `SVC` của scikit-learn trên bốn điểm $(-1, -1)$, $(-2, -1)$ thuộc lớp $-1$ và $(1, 1)$, $(2, 1)$ thuộc lớp $+1$ (cũng là ví dụ giải tay ở chương 4). Với $C = 1$ và $C = 10$, nghiệm trùng với nghiệm lề cứng có lề $2\sqrt{2} \approx 2.83$ và hai vector hỗ trợ; với $C = 0.1$, phạt vi phạm đủ nhẹ để mô hình nới lề lên $4.39$ và cả bốn điểm đều trở thành vector hỗ trợ.
+Ảnh hưởng của $C$ có thể kiểm tra trực tiếp bằng `SVC` của scikit-learn trên bốn điểm $(-1, -1)$, $(-2, -1)$ thuộc lớp $-1$ và $(1, 1)$, $(2, 1)$ thuộc lớp $+1$ (cũng là ví dụ giải tay ở chương 4). Với $C = 1$ và $C = 10$, nghiệm trùng với nghiệm lề cứng có lề $2\sqrt{2} \approx 2.83$ và hai vector hỗ trợ; với $C = 0.1$, phạt vi phạm đủ nhẹ để mô hình nới lề lên $4.39$ và cả bốn điểm đều trở thành vector hỗ trợ. Điều này khớp với lập luận về hàm mục tiêu: khi $C$ đủ lớn, phần phạt $C\sum_i \xi_i$ lấn át phần $\frac{1}{2}\|w\|^2$, nên với dữ liệu tách được, nghiệm tối ưu có mọi $\xi_i = 0$ và lề mềm trùng với lề cứng [5].
 
 ```python
 from sklearn.svm import SVC
@@ -69,8 +87,6 @@ for C in [0.1, 1, 10]:
 ```
 
 ## Trước: Phương pháp nhân tử Lagrange và bài toán đối ngẫu
-
-Trong code, hàm quyết định dùng quy ước $w^T x + b$; quy ước này tương đương $w^T x - b$ trong bản nền khi đổi dấu bias.
 
 Hình sau minh họa biến bù: điểm nhãn $+1$ vẫn ở đúng phía ranh giới nhưng lọt vào vùng lề, nên cần một biến bù dương để ràng buộc lề mềm được thỏa.
 
@@ -130,6 +146,12 @@ for z in [-2, -1, 0, 1, 2]:
 
 ![Hinge loss](../../docs/images/scientific/hinge_loss.png){width=4.6}
 
+Chia hàm mục tiêu cho $C$ được dạng quen thuộc của học máy có điều chuẩn: tổng hinge loss trên dữ liệu cộng một thành phần phạt độ lớn của $w$ [5]:
+
+$$\sum_{i=1}^{n} \max(0, 1 - y_i f(x_i)) + \frac{\lambda}{2}\|w\|^2, \quad \lambda = \frac{1}{C}$$
+
+So với hồi quy logistic có điều chuẩn L2, SVM chỉ thay logistic loss bằng hinge loss; thành phần điều chuẩn vẫn giữ vai trò kìm độ lớn của $w$. Tăng $\lambda$, tức giảm $C$, làm $w$ nhỏ lại, lề rộng ra và ranh giới bớt bám theo từng điểm, nên giảm $C$ là cách đầu tiên nên thử khi mô hình quá khớp.
+
 ## Trước: Ý nghĩa của việc chuyển đổi sang bài toán đối ngẫu
 
 Trước khi áp dụng cho SVM, xét một bài toán quy hoạch bậc hai rất nhỏ để thấy nhân tử Lagrange hoạt động thế nào:
@@ -142,17 +164,87 @@ $$L(x, y, \lambda) = x^2 + 2y^2 - \lambda (x + y - 3)$$
 
 Cho các đạo hàm riêng bằng 0 được $2x - \lambda = 0$ và $4y - \lambda = 0$, tức $x = \lambda/2$ và $y = \lambda/4$. Thay vào ràng buộc được $\lambda = 4$, do đó $x = 2$, $y = 1$ và giá trị nhỏ nhất của mục tiêu bằng $6$. Bài toán SVM lặp lại đúng cơ chế này, chỉ khác là có nhiều biến hơn và các ràng buộc là bất đẳng thức nên các nhân tử $\alpha_i$, $\mu_i$ phải không âm [5].
 
+Tổng quát, xét bài toán cực tiểu $f(x)$ với các ràng buộc đẳng thức $h_i(x) = 0$ và bất đẳng thức $g_j(x) \leq 0$. Hàm Lagrange gắn mỗi ràng buộc với một nhân tử:
+
+$$L(x, \lambda, \nu) = f(x) + \sum_i \lambda_i h_i(x) + \sum_j \nu_j g_j(x)$$
+
+Khi $\nu_j \geq 0$, tại mọi điểm khả thi phần cộng thêm không dương nên $L$ không vượt quá $f$. Vì vậy giá trị nhỏ nhất của $L$ theo $x$, ký hiệu $q(\lambda, \nu)$, luôn là một cận dưới của giá trị tối ưu gốc [5]. Bài toán đối ngẫu tìm cận dưới tốt nhất, tức cực đại $q(\lambda, \nu)$ với $\nu \geq 0$. Hàm $q$ luôn lõm, kể cả khi $f$ không lồi, vì nó là cực tiểu của một họ hàm tuyến tính theo $(\lambda, \nu)$. Khi giá trị tối ưu của hai bài toán bằng nhau, ta nói có đối ngẫu mạnh (strong duality), và giải bài toán nào cũng cho cùng một giá trị.
+
+SVM thuộc lớp quy hoạch bậc hai (QP): cực tiểu $\frac{1}{2}x^T A x + c^T x + r$ với các ràng buộc tuyến tính $Hx = d$ và $Gx \leq e$. Ma trận Hessian của hàm mục tiêu là $A$, nên nếu $A$ nửa xác định dương ($x^T A x \geq 0$ với mọi $x$) thì hàm mục tiêu lồi. Nếu thêm vào đó tồn tại một điểm thỏa mọi đẳng thức và thỏa chặt mọi bất đẳng thức (điều kiện Slater), thì đối ngẫu mạnh xảy ra và các điều kiện KKT vừa cần vừa đủ cho nghiệm tối ưu [5]. Với lề mềm, $A$ là ma trận đơn vị trên phần $w$ và bằng 0 trên $b$, $\xi$ nên nửa xác định dương; chọn các $\xi_i$ đủ lớn là thỏa chặt mọi ràng buộc, nên điều kiện Slater luôn đúng.
+
+Một bài QP nhỏ đôi khi giải được chỉ bằng cách gom bình phương [5]. Xét
+
+$$\min_{x, y} 2x^2 + 2xy + y^2 + 2x + 2y + 1 \text{ sao cho } x + y \geq 2, x \geq 1$$
+
+Hàm mục tiêu viết lại được thành $(x + y + 1)^2 + x^2$. Trên miền ràng buộc có $x + y + 1 \geq 3$ và $x \geq 1$, nên giá trị không nhỏ hơn $3^2 + 1^2 = 10$, đạt tại $x = y = 1$; `scipy.optimize.minimize` cho cùng nghiệm. Ở dạng tổng quát, $A$ có hai hàng $(4, 2)$ và $(2, 2)$ với hai trị riêng dương nên hàm mục tiêu lồi, và điểm $(2, 2)$ thỏa chặt cả hai ràng buộc nên điều kiện Slater đúng. Mẹo gom bình phương hiếm khi áp dụng được; với bài toán lớn như SVM phải dựa vào điều kiện KKT.
+
+Khi chỉ có ràng buộc đẳng thức, điều kiện KKT là một hệ phương trình tuyến tính: đạo hàm của $L$ theo $x$ bằng 0 cho $Ax + H^T \lambda = -c$, còn ràng buộc cho $Hx = d$. Ghép lại thành
+
+$$\begin{bmatrix} A & H^T \\ H & 0 \end{bmatrix} \begin{bmatrix} x \\ \lambda \end{bmatrix} = \begin{bmatrix} -c \\ d \end{bmatrix}$$
+
+Bài QP đầu mục có $A = \mathrm{diag}(2, 4)$, $c = 0$, $H = [1, 1]$ và $d = 3$. Giải hệ ba phương trình này được lại $x = 2$, $y = 1$; nhân tử ra $-4$ thay vì $4$ chỉ vì ở đây ràng buộc được cộng vào $L$ thay vì trừ đi.
+
+```python
+import numpy as np
+
+K = np.array([[2., 0., 1.], [0., 4., 1.], [1., 1., 0.]])
+print(np.linalg.solve(K, [0., 0., 3.]))  # [ 2.  1. -4.]
+```
+
 ## Trước: Điều kiện tối ưu KKT (Karush-Kuhn-Tucker) và tính thưa thớt của nghiệm
 
-Hình sau tóm tắt chuỗi suy diễn từ bài toán gốc qua hàm Lagrange và các đạo hàm riêng đến bài toán đối ngẫu.
+Áp dụng cho SVM lề mềm: mỗi ràng buộc $y_i(w^T x_i + b) \geq 1 - \xi_i$ được gắn một nhân tử $\alpha_i \geq 0$, mỗi ràng buộc $\xi_i \geq 0$ được gắn một nhân tử $\mu_i \geq 0$. Vì các ràng buộc có dạng "lớn hơn hoặc bằng", chúng được trừ đi trong hàm Lagrange:
+
+$$L(w, b, \xi, \alpha, \mu) = \frac{1}{2}\|w\|^2 + C\sum_i \xi_i - \sum_i \alpha_i [y_i(w^T x_i + b) - 1 + \xi_i] - \sum_i \mu_i \xi_i$$
+
+Cho các đạo hàm riêng của $L$ theo $w$, $b$ và từng $\xi_i$ bằng 0 được ba hệ thức:
+
+$$w = \sum_i \alpha_i y_i x_i, \quad \sum_i \alpha_i y_i = 0, \quad C - \alpha_i - \mu_i = 0$$
+
+Hệ thức đầu cho thấy $w$ là tổ hợp tuyến tính của các điểm dữ liệu, với trọng số $\alpha_i y_i$. Hệ thức cuối kết hợp với $\mu_i \geq 0$ cho $\alpha_i \leq C$, nên $C$ chính là trần của mỗi nhân tử [5].
+
+Thay ba hệ thức này trở lại $L$ để khử các biến gốc. Các số hạng chứa $\xi_i$ gom lại thành $\sum_i (C - \alpha_i - \mu_i)\xi_i = 0$. Số hạng chứa $b$ là $-b\sum_i \alpha_i y_i = 0$. Số hạng $-\sum_i \alpha_i y_i w^T x_i$ bằng $-w^T w = -\|w\|^2$, cộng với $\frac{1}{2}\|w\|^2$ còn lại $-\frac{1}{2}\|w\|^2$. Viết $\|w\|^2$ theo các $\alpha$ được hàm đối ngẫu chỉ còn biến $\alpha$:
+
+$$q(\alpha) = \sum_i \alpha_i - \frac{1}{2}\sum_i \sum_j \alpha_i \alpha_j y_i y_j x_i^T x_j$$
+
+Bài toán đối ngẫu là cực đại $q(\alpha)$ với $\sum_i \alpha_i y_i = 0$ và $0 \leq \alpha_i \leq C$. Biến $\xi$ và $\mu$ đã biến mất, ràng buộc chỉ còn dạng hộp cùng một đẳng thức, và dữ liệu chỉ xuất hiện qua tích vô hướng $x_i^T x_j$. Chính điểm cuối này cho phép thay tích vô hướng bằng hàm hạt nhân ở chương 3.
+
+Hình sau tóm tắt lại chuỗi suy diễn vừa trình bày.
 
 ![Primal, Lagrangian, Dual](../../docs/diagrams/lagrange_dual.png){width=4.2}
 
 ## Trước: Kết luận chương 2
 
-Theo điều kiện bù, giá trị của $\alpha_i$ cho biết vị trí của điểm: $\alpha_i = 0$ thường là điểm nằm ngoài lề và không đóng góp vào $w$; $0 < \alpha_i < C$ là điểm nằm đúng trên lề; $\alpha_i = C$ là điểm nằm trên lề hoặc vi phạm lề. Cả hai trường hợp sau đều là vector hỗ trợ.
+Nghiệm tối ưu của SVM thỏa bốn nhóm điều kiện KKT [5]. Thứ nhất, khả thi của bài toán gốc: mọi ràng buộc $y_i(w^T x_i + b) \geq 1 - \xi_i$ và $\xi_i \geq 0$ đều đúng. Thứ hai, khả thi của bài toán đối ngẫu: $\alpha_i \geq 0$ và $\mu_i \geq 0$, đúng điều kiện để hàm Lagrange là cận dưới. Thứ ba, điều kiện dừng: các đạo hàm riêng của $L$ bằng 0, chính là ba hệ thức ở trên. Thứ tư, điều kiện bù:
+
+$$\alpha_i [y_i(w^T x_i + b) - 1 + \xi_i] = 0, \quad \mu_i \xi_i = 0$$
+
+Điều kiện bù nói rằng với mỗi ràng buộc, hoặc nhân tử bằng 0, hoặc ràng buộc xảy ra dấu bằng. Kết hợp với $\mu_i = C - \alpha_i$, giá trị của $\alpha_i$ cho biết vị trí của điểm. Nếu $\alpha_i = 0$ thì $\mu_i = C > 0$, kéo theo $\xi_i = 0$ và $y_i f(x_i) \geq 1$: điểm nằm ngoài hoặc trên lề và không đóng góp vào $w$. Nếu $0 < \alpha_i < C$ thì $\mu_i > 0$ nên $\xi_i = 0$, đồng thời ràng buộc thứ nhất xảy ra dấu bằng, tức $y_i f(x_i) = 1$: điểm nằm đúng trên lề. Nếu $\alpha_i = C$ thì $\mu_i = 0$ nên $\xi_i$ được phép dương: điểm nằm trên lề, trong lề hoặc bị phân loại sai. Hai trường hợp sau là các vector hỗ trợ.
 
 ![Ba vùng của alpha](../../docs/images/scientific/kkt_alpha_number_line.png){width=5.6}
+
+Khi đã có $\alpha$, vector $w$ tính được từ hệ thức dừng, và chỉ các vector hỗ trợ góp phần vào tổng. Để tìm $b$, lấy một điểm $x_i$ nằm đúng trên lề ($0 < \alpha_i < C$): từ $y_i(w^T x_i + b) = 1$ và $y_i^2 = 1$ suy ra $b = y_i - w^T x_i$. Để giảm sai số số học, người ta lấy trung bình trên tập $M$ các điểm như vậy:
+
+$$b = \frac{1}{|M|}\sum_{i \in M} (y_i - w^T x_i)$$
+
+Dự đoán cho điểm mới $x$ theo dấu của $f(x) = \sum_{i \in S} \alpha_i y_i x_i^T x + b$, trong đó $S$ là tập vector hỗ trợ. Mô hình chỉ cần giữ lại các vector hỗ trợ; đó là tính thưa thớt của nghiệm.
+
+Ví dụ với bốn điểm $(-1, -1)$, $(1, 1)$, $(-2, -1)$, $(2, 1)$ có nhãn $-1, 1, -1, 1$. Giải bài toán đối ngẫu được $\alpha_1 = \alpha_2 = 0.25$ và $\alpha_3 = \alpha_4 = 0$, nên chỉ hai điểm đầu là vector hỗ trợ. Từ đó $w = 0.25(1, 1) + 0.25(1, 1) = (0.5, 0.5)$ và $b = 1 - w^T(1, 1) = 0$. Giá trị đối ngẫu bằng $0.5 - 0.25 = 0.25$, đúng bằng giá trị gốc $\frac{1}{2}\|w\|^2 = 0.25$, minh họa đối ngẫu mạnh. Đoạn code sau lấy $\alpha$ từ scikit-learn rồi dựng lại $w$, $b$ theo đúng các công thức trên.
+
+```python
+import numpy as np
+from sklearn.svm import SVC
+
+X = np.array([[-1., -1.], [1., 1.], [-2., -1.], [2., 1.]])
+y = np.array([-1, 1, -1, 1])
+clf = SVC(kernel='linear', C=10).fit(X, y)
+alpha_y = clf.dual_coef_[0]  # alpha_i * y_i của các vector hỗ trợ
+sv = clf.support_vectors_
+w = alpha_y @ sv
+b = np.mean(y[clf.support_] - sv @ w)
+print(clf.support_, np.abs(alpha_y))  # [0 1] [0.25 0.25]
+print(w, b)                           # [0.5 0.5] 0.0
+```
 
 ## Trước: Điều kiện Mercer đảm bảo tính lồi và nghiệm tối ưu toàn cục
 

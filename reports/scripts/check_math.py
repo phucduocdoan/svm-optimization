@@ -267,21 +267,24 @@ def check_content(body, records) -> list[str]:
     return errors
 
 
-# Word vẽ ô vuông giữ chỗ cho ô đối số rỗng, trừ khi ô đó được ẩn (subHide/supHide/degHide).
-SLOTS = {"sub": "subHide", "sup": "supHide", "deg": "degHide", "e": None, "num": None, "den": None,
-         "lim": None, "fName": None}
+# Word vẽ ô vuông giữ chỗ cho ô bắt buộc bị thiếu hoặc rỗng, trừ khi ô đó được ẩn (subHide/supHide/degHide).
+SLOTS = {"nary": ("sub", "sup", "e"), "rad": ("deg", "e"), "f": ("num", "den"), "sSub": ("e", "sub"),
+         "sSup": ("e", "sup"), "sSubSup": ("e", "sub", "sup"), "func": ("fName", "e"),
+         "limLow": ("e", "lim"), "limUpp": ("e", "lim")}
 
 
 def check_placeholders(body) -> list[str]:
     errors = []
-    for slot, hide in SLOTS.items():
-        for el in body.iter(M + slot):
-            if "".join(el.itertext()).strip():
-                continue
-            flag = el.getparent().find(f"{M}{el.getparent().tag[len(M):]}Pr/{M}{hide}") if hide else None
-            if flag is None or flag.get(M + "val") in ("0", "off", "false"):
-                math = el.xpath("ancestor::m:oMath[1]", namespaces={"m": M[1:-1]})
-                errors.append(f"Ô {slot} rỗng sẽ hiện ô vuông: {''.join(math[0].itertext())[:80]!r}")
+    for kind, slots in SLOTS.items():
+        for el in body.iter(M + kind):
+            for slot in slots:
+                content = el.find(M + slot)
+                if content is not None and "".join(content.itertext()).strip():
+                    continue
+                flag = el.find(f"{M}{kind}Pr/{M}{slot}Hide")
+                if flag is None or flag.get(M + "val") in ("0", "off", "false"):
+                    math = el.xpath("ancestor::m:oMath[1]", namespaces={"m": M[1:-1]})
+                    errors.append(f"Ô {slot} của {kind} trống sẽ hiện ô vuông: {''.join(math[0].itertext())[:80]!r}")
     return errors
 
 
